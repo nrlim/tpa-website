@@ -43,11 +43,29 @@ export default async function DashboardLayout({ children }: { children: React.Re
     // If check role and redirect? Maybe not in layout to avoid infinite loops if paths are mixed. 
     // Individual pages protect themselves or middleware does.
 
+    // Determine the user's dashboard link based on their role
+    let dashboardLink = '/dashboard'
+    if (dbUser?.role) {
+        switch (dbUser.role.name) {
+            case 'admin':
+                dashboardLink = '/dashboard/admin'
+                break
+            case 'teacher':
+                dashboardLink = '/dashboard/teacher'
+                break
+            case 'parent':
+                dashboardLink = '/dashboard/parent'
+                break
+            default:
+                dashboardLink = '/dashboard'
+        }
+    }
+
     return (
         <div className="min-h-screen flex flex-col">
             <header className="border-b bg-background sticky top-0 z-10 px-6 h-16 flex items-center justify-between shadow-sm">
                 <div className="flex items-center gap-3">
-                    <Link href="/" className="flex items-center gap-3">
+                    <Link href={dashboardLink} className="flex items-center gap-3">
                         <Image
                             src="/logo.png"
                             alt="TPA Nurul Iman Logo"

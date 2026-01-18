@@ -4,15 +4,17 @@ import PaymentClient from "./PaymentClient"
 export default async function AdminPaymentsPage({
     searchParams,
 }: {
-    searchParams: Promise<{ month?: string; year?: string }>
+    searchParams: Promise<{ month?: string; year?: string; sort?: string; order?: string }>
 }) {
     const resolvedParams = await searchParams
 
     const currentDate = new Date()
     const month = resolvedParams.month ? parseInt(resolvedParams.month) : currentDate.getMonth() + 1
     const year = resolvedParams.year ? parseInt(resolvedParams.year) : currentDate.getFullYear()
+    const sortBy = resolvedParams.sort || 'name'
+    const sortOrder = (resolvedParams.order as 'asc' | 'desc') || 'asc'
 
-    const students = await getStudentsWithPaymentStatus(month, year)
+    const students = await getStudentsWithPaymentStatus(month, year, sortBy, sortOrder)
 
     return (
         <div className="p-6 space-y-6">

@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useTransition } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { markPayment, markBulkPayment } from "./actions"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react"
 
 // Extend jsPDF interface if needed, or simply force cast to any
 // Usually autoTable adds itself to prototype.
@@ -36,9 +37,33 @@ const YEARS = [2024, 2025, 2026, 2027]
 
 export default function PaymentClient({ initialStudents, currentMonth, currentYear }: PaymentClientProps) {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const [isPending, startTransition] = useTransition()
     const [selectedIds, setSelectedIds] = useState<string[]>([])
     const [isBulkPending, setIsBulkPending] = useState(false)
+
+    const currentSort = searchParams.get('sort') || 'name'
+    const currentOrder = searchParams.get('order') || 'asc'
+
+    const handleSort = (column: string) => {
+        const params = new URLSearchParams(searchParams.toString())
+        if (currentSort === column && currentOrder === 'asc') {
+            params.set('order', 'desc')
+        } else {
+            params.set('sort', column)
+            params.set('order', 'asc')
+        }
+        startTransition(() => {
+            router.push(`?${params.toString()}`)
+        })
+    }
+
+    const SortIcon = ({ column }: { column: string }) => {
+        if (currentSort !== column) return <ArrowUpDown className="w-4 h-4 ml-1 text-gray-400" />
+        return currentOrder === 'asc'
+            ? <ArrowUp className="w-4 h-4 ml-1 text-primary" />
+            : <ArrowDown className="w-4 h-4 ml-1 text-primary" />
+    }
 
     const handleDateChange = (type: 'month' | 'year', value: string) => {
         const params = new URLSearchParams(window.location.search)
@@ -413,6 +438,42 @@ _Pesan ini dikirim melalui Sistem Informasi TPA Nurul Iman_`
                             ))}
                         </select>
                     </div>
+
+                    <div className="flex flex-col gap-2">
+                        <label className="text-sm font-medium">Sort By</label>
+                        <select
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            value={currentSort}
+                            onChange={(e) => {
+                                const params = new URLSearchParams(searchParams.toString())
+                                params.set('sort', e.target.value)
+                                params.set('order', 'asc') // Reset to asc on column change
+                                startTransition(() => router.push(`?${params.toString()}`))
+                            }}
+                            disabled={isPending}
+                        >
+                            <option value="name">Name</option>
+                            <option value="nis">NIS</option>
+                            <option value="status">Status</option>
+                        </select>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                        <label className="text-sm font-medium">Order</label>
+                        <select
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            value={currentOrder}
+                            onChange={(e) => {
+                                const params = new URLSearchParams(searchParams.toString())
+                                params.set('order', e.target.value)
+                                startTransition(() => router.push(`?${params.toString()}`))
+                            }}
+                            disabled={isPending}
+                        >
+                            <option value="asc">Ascending</option>
+                            <option value="desc">Descending</option>
+                        </select>
+                    </div>
                 </CardContent>
             </Card>
 
@@ -428,9 +489,21 @@ _Pesan ini dikirim melalui Sistem Informasi TPA Nurul Iman_`
                                     checked={initialStudents.length > 0 && selectedIds.length === initialStudents.length}
                                 />
                             </th>
-                            <th className="p-4 font-medium">Student Name</th>
-                            <th className="p-4 font-medium">NIS</th>
-                            <th className="p-4 font-medium">Status</th>
+                            <th className="p-4 font-medium cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('name')}>
+                                <div className="flex items-center">
+                                    Student Name <SortIcon column="name" />
+                                </div>
+                            </th>
+                            <th className="p-4 font-medium cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('nis')}>
+                                <div className="flex items-center">
+                                    NIS <SortIcon column="nis" />
+                                </div>
+                            </th>
+                            <th className="p-4 font-medium cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('status')}>
+                                <div className="flex items-center">
+                                    Status <SortIcon column="status" />
+                                </div>
+                            </th>
                             <th className="p-4 font-medium text-right">Action</th>
                         </tr>
                     </thead>

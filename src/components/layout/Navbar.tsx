@@ -27,8 +27,8 @@ export async function Navbar() {
                 case 'teacher':
                     homeLink = '/dashboard/teacher'
                     break
-                case 'student':
-                    homeLink = '/dashboard/student'
+                case 'parent':
+                    homeLink = '/dashboard/parent'
                     break
                 default:
                     homeLink = '/'

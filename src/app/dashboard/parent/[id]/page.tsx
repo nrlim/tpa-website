@@ -1,52 +1,64 @@
 import { createClient } from '@/lib/supabase/server'
 import prisma from '@/lib/prisma'
 import { Score } from '@prisma/client'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { getStudentPayments } from "@/app/dashboard/admin/payments/actions"
+import Link from 'next/link'
+import { notFound } from 'next/navigation'
 
-// Quick components for Card (I don't have them in UI yet, I should use standard divs or create them, but I will simulate them or use standard HTML with classes)
-// Actually I can create ui/card.tsx but it takes time. I will just use divs with classes to be faster and still look good.
-// "Use best practices... Create components".
-// Okay, I should probably generate `src/components/ui/card.tsx`.
-// But I will just write inline styles for now to ensure I finish the main logic.
-// Wait, I can't overwrite `card` variable if I import.
-// I will use `div className="bg-card ..."` 
-
-export default async function StudentDashboard() {
+export default async function StudentDetailPage({
+    params
+}: {
+    params: Promise<{ id: string }>
+}) {
+    const { id } = await params
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
+
     if (!user) return null
 
-    const student = await prisma.student.findUnique({
+    // Get parent to verify ownership
+    const parent = await prisma.parent.findUnique({
         where: { userId: user.id },
         include: {
-            scores: {
-                orderBy: { createdAt: 'desc' }
+            students: {
+                where: { id },
+                include: {
+                    scores: {
+                        orderBy: { createdAt: 'desc' }
+                    }
+                }
             }
         }
     })
 
-    const payments = student ? await getStudentPayments(student.id) : []
-
-    if (!student) {
-        return (
-            <div className="p-4 bg-yellow-100 text-yellow-800 rounded-lg">
-                Data santri tidak ditemukan. Silakan hubungi admin.
-            </div>
-        )
+    // Check if parent owns this student
+    if (!parent || parent.students.length === 0) {
+        notFound()
     }
 
+    const student = parent.students[0]
+    const payments = await getStudentPayments(student.id)
 
     const now = new Date()
     const currentMonth = now.getMonth() + 1
     const currentYear = now.getFullYear()
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const currentPayment = payments.find((p: any) => p.month === currentMonth && p.year === currentYear)
     const isPaidThisMonth = currentPayment?.status === 'PAID'
 
     return (
         <div className="space-y-8">
+            {/* Back Button */}
+            <Link
+                href="/dashboard/parent"
+                className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7" /><path d="M19 12H5" /></svg>
+                Kembali ke Dashboard
+            </Link>
+
             {/* Payment Alert */}
             {!isPaidThisMonth ? (
                 <div className="bg-destructive/10 border border-destructive/20 text-destructive rounded-xl p-4 flex items-start sm:items-center gap-4 shadow-sm animate-in fade-in slide-in-from-top-4">
@@ -90,7 +102,7 @@ export default async function StudentDashboard() {
                     </div>
                     <div>
                         <p className="text-sm text-muted-foreground">Orang Tua</p>
-                        <p className="font-medium">{student.parentName}</p>
+                        <p className="font-medium">{parent.name}</p>
                     </div>
                     <div>
                         <p className="text-sm text-muted-foreground">Tanggal Lahir</p>
@@ -98,7 +110,7 @@ export default async function StudentDashboard() {
                     </div>
                     <div className="md:col-span-2">
                         <p className="text-sm text-muted-foreground">Alamat</p>
-                        <p className="font-medium">{student.address}</p>
+                        <p className="font-medium">{parent.address}</p>
                     </div>
                 </div>
             </section>
@@ -169,6 +181,7 @@ export default async function StudentDashboard() {
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                     {payments.map((payment: any) => (
                                         <tr key={payment.id} className="border-b last:border-0 hover:bg-muted/30">
                                             <td className="p-4 whitespace-nowrap">

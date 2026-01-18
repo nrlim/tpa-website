@@ -16,7 +16,7 @@ export default async function TeacherDashboard({
     const where = query ? {
         OR: [
             { fullName: { contains: query, mode: 'insensitive' as const } },
-            { parentName: { contains: query, mode: 'insensitive' as const } }
+            { parent: { name: { contains: query, mode: 'insensitive' as const } } }
         ]
     } : {};
 
@@ -24,7 +24,8 @@ export default async function TeacherDashboard({
         where,
         take: pageSize,
         skip: (page - 1) * pageSize,
-        orderBy: { fullName: 'asc' }
+        orderBy: { fullName: 'asc' },
+        include: { parent: true }
     })
 
     const total = await prisma.student.count({ where })
@@ -46,7 +47,8 @@ export default async function TeacherDashboard({
                     <table className="w-full text-sm text-left caption-bottom">
                         <thead className="bg-muted/50 text-muted-foreground border-b">
                             <tr>
-                                <th className="h-12 px-4 align-middle font-medium">Nama Lengkap</th>
+                                <th className="h-12 px-4 align-middle font-medium">NIS</th>
+                                <th className="h-12 px-4 align-middle font-medium">Nama Santri</th>
                                 <th className="h-12 px-4 align-middle font-medium">Orang Tua</th>
                                 <th className="h-12 px-4 align-middle font-medium text-right">Aksi</th>
                             </tr>
@@ -54,8 +56,11 @@ export default async function TeacherDashboard({
                         <tbody>
                             {students.map(s => (
                                 <tr key={s.id} className="border-b transition-colors hover:bg-muted/50">
+                                    <td className="p-4 align-middle">
+                                        <span className="font-mono text-xs text-muted-foreground">{s.nis || '-'}</span>
+                                    </td>
                                     <td className="p-4 align-middle font-medium">{s.fullName}</td>
-                                    <td className="p-4 align-middle">{s.parentName}</td>
+                                    <td className="p-4 align-middle">{s.parent.name}</td>
                                     <td className="p-4 align-middle text-right">
                                         <Link href={`/dashboard/teacher/student/${s.id}`} className={buttonVariants({ size: 'sm', variant: 'default' })}>
                                             Input Nilai
@@ -65,7 +70,7 @@ export default async function TeacherDashboard({
                             ))}
                             {students.length === 0 && (
                                 <tr>
-                                    <td colSpan={3} className="p-8 text-center text-muted-foreground">Tidak ada data santri.</td>
+                                    <td colSpan={4} className="p-8 text-center text-muted-foreground">Tidak ada data santri.</td>
                                 </tr>
                             )}
                         </tbody>
@@ -75,7 +80,6 @@ export default async function TeacherDashboard({
 
             {/* Pagination */}
             <div className="flex items-center justify-end space-x-2 py-4">
-                {/* ... reuse pagination logic ... */}
                 {page > 1 && <Link href={`?page=${page - 1}&q=${query}`}><Button variant="outline" size="sm">Prev</Button></Link>}
                 {(page * pageSize) < total && <Link href={`?page=${page + 1}&q=${query}`}><Button variant="outline" size="sm">Next</Button></Link>}
             </div>

@@ -42,7 +42,7 @@ export function Footer() {
                         <div className="space-y-4 text-slate-400">
                             <p className="flex items-start gap-3">
                                 <span className="text-white font-semibold min-w-[60px]">Alamat:</span>
-                                <span>Masjid Nurul Iman, Baltic Area, Kab Bekasi</span>
+                                <span>Majelis Nurul Iman, Baltic Area, Kab Bekasi</span>
                             </p>
                             <p className="flex items-center gap-3">
                                 <span className="text-white font-semibold min-w-[60px]">Phone:</span>

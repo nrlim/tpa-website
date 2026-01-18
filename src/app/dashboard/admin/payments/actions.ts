@@ -3,10 +3,16 @@
 import prisma from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 
-export async function getStudentsWithPaymentStatus(month: number, year: number) {
+export async function getStudentsWithPaymentStatus(
+    month: number,
+    year: number,
+    sortBy: string = 'name',
+    sortOrder: 'asc' | 'desc' = 'asc'
+) {
     try {
         const students = await prisma.student.findMany({
             include: {
+                parent: true,
                 payments: {
                     where: {
                         month: month,
@@ -19,12 +25,34 @@ export async function getStudentsWithPaymentStatus(month: number, year: number) 
             }
         })
 
-        return students.map(student => ({
-            ...student,
+        const mappedStudents = students.map(student => ({
+            id: student.id,
+            fullName: student.fullName,
+            nis: student.nis,
             status: student.payments[0]?.status || 'UNPAID',
             paymentId: student.payments[0]?.id,
-            phoneNumber: student.phoneNumber
+            phoneNumber: student.parent.phoneNumber
         }))
+
+        return mappedStudents.sort((a, b) => {
+            let valA = ''
+            let valB = ''
+
+            if (sortBy === 'name') {
+                valA = a.fullName.toLowerCase()
+                valB = b.fullName.toLowerCase()
+            } else if (sortBy === 'nis') {
+                valA = (a.nis || '').toLowerCase()
+                valB = (b.nis || '').toLowerCase()
+            } else if (sortBy === 'status') {
+                valA = a.status
+                valB = b.status
+            }
+
+            if (valA < valB) return sortOrder === 'asc' ? -1 : 1
+            if (valA > valB) return sortOrder === 'asc' ? 1 : -1
+            return 0
+        })
     } catch (error) {
         console.error("Error fetching students with payment status")
         throw new Error("Failed to fetch payment status")
@@ -55,7 +83,7 @@ export async function markPayment(studentId: string, month: number, year: number
         })
 
         revalidatePath('/dashboard/admin/payments')
-        revalidatePath('/dashboard/student')
+        revalidatePath('/dashboard/parent')
         return { success: true }
     } catch (error) {
         console.error("Error updating payment")
@@ -92,7 +120,7 @@ export async function markBulkPayment(studentIds: string[], month: number, year:
         )
 
         revalidatePath('/dashboard/admin/payments')
-        revalidatePath('/dashboard/student')
+        revalidatePath('/dashboard/parent')
         return { success: true }
     } catch (error) {
         console.error("Error updating bulk payments")

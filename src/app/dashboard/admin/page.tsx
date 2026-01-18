@@ -5,7 +5,7 @@ import { EditStudentModal } from './EditStudentModal'
 import { deleteStudent } from './actions'
 import Link from 'next/link'
 import { Button, buttonVariants } from '@/components/ui/button'
-import { Input } from '@/components/ui/input' // Use UI input if possible
+import { Input } from '@/components/ui/input'
 
 // Calculate age from date of birth
 function calculateAge(dateOfBirth: Date): number {
@@ -34,7 +34,7 @@ export default async function AdminDashboard({
     const where = query ? {
         OR: [
             { fullName: { contains: query, mode: 'insensitive' as const } },
-            { parentName: { contains: query, mode: 'insensitive' as const } }
+            { parent: { name: { contains: query, mode: 'insensitive' as const } } }
         ]
     } : {};
 
@@ -44,16 +44,31 @@ export default async function AdminDashboard({
         take: pageSize,
         skip: (page - 1) * pageSize,
         orderBy: { createdAt: 'desc' },
-        include: { user: true }
+        include: {
+            parent: {
+                include: {
+                    user: true
+                }
+            }
+        }
     })
 
     const total = await prisma.student.count({ where })
+    const pendingCount = await prisma.preUser.count({ where: { status: 'PENDING' } })
 
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h1 className="text-3xl font-bold tracking-tight">Data Santri</h1>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
+                    <Link href="/dashboard/admin/registrations" className={buttonVariants({ variant: pendingCount > 0 ? 'default' : 'outline' })}>
+                        {pendingCount > 0 && (
+                            <span className="inline-flex items-center justify-center w-5 h-5 mr-2 text-xs font-bold text-white bg-red-500 rounded-full">
+                                {pendingCount}
+                            </span>
+                        )}
+                        Pendaftaran Menunggu
+                    </Link>
                     <Link href="/dashboard/admin/payments" className={buttonVariants({ variant: 'outline' })}>
                         Kelola Pembayaran
                     </Link>
@@ -68,7 +83,7 @@ export default async function AdminDashboard({
 
             {/* Search Bar */}
             <form className="flex gap-2 max-w-md">
-                <Input name="q" placeholder="Cari nama atau orang tua..." defaultValue={query} className="bg-background" />
+                <Input name="q" placeholder="Cari nama santri atau orang tua..." defaultValue={query} className="bg-background" />
                 <Button type="submit" variant="secondary">Cari</Button>
             </form>
 
@@ -78,7 +93,7 @@ export default async function AdminDashboard({
                         <thead className="bg-muted/50 text-muted-foreground border-b">
                             <tr>
                                 <th className="h-12 px-4 align-middle font-medium">NIS</th>
-                                <th className="h-12 px-4 align-middle font-medium">Nama Lengkap</th>
+                                <th className="h-12 px-4 align-middle font-medium">Nama Santri</th>
                                 <th className="h-12 px-4 align-middle font-medium">Orang Tua</th>
                                 <th className="h-12 px-4 align-middle font-medium">Umur</th>
                                 <th className="h-12 px-4 align-middle font-medium">Status</th>
@@ -96,20 +111,20 @@ export default async function AdminDashboard({
                                         )}
                                     </td>
                                     <td className="p-4 align-middle font-medium">{s.fullName}</td>
-                                    <td className="p-4 align-middle">{s.parentName}</td>
+                                    <td className="p-4 align-middle">{s.parent.name}</td>
                                     <td className="p-4 align-middle">
                                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
                                             {calculateAge(s.dateOfBirth)} tahun
                                         </span>
                                     </td>
                                     <td className="p-4 align-middle">
-                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${s.user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                            {s.user.isActive ? 'Active' : 'Inactive'}
+                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${s.parent.user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                            {s.parent.user.isActive ? 'Active' : 'Inactive'}
                                         </span>
                                     </td>
                                     <td className="p-4 align-middle text-right">
                                         <div className="flex justify-end gap-2">
-                                            <ToggleStatusButton studentId={s.id} isActive={s.user.isActive} />
+                                            <ToggleStatusButton studentId={s.id} isActive={s.parent.user.isActive} />
                                             <EditStudentModal student={s} />
                                             <DeleteButton action={deleteStudent.bind(null, s.id)} />
                                         </div>

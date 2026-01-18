@@ -20,7 +20,7 @@ export async function login(prevState: any, formData: FormData) {
         return { error: 'Invalid login credentials' }
     }
 
-    let redirectPath = '/dashboard/student' // default
+    let redirectPath = '/dashboard/parent' // default
 
     if (data.user) {
         const user = await prisma.user.findUnique({
@@ -32,8 +32,8 @@ export async function login(prevState: any, formData: FormData) {
             redirectPath = '/dashboard/admin'
         } else if (user?.role?.name === 'teacher') {
             redirectPath = '/dashboard/teacher'
-        } else if (user?.role?.name === 'student') {
-            redirectPath = '/dashboard/student'
+        } else if (user?.role?.name === 'parent') {
+            redirectPath = '/dashboard/parent'
         }
     }
 

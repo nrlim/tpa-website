@@ -14,14 +14,13 @@ model Role {
   users User[]
 }
 
-
 model User {
   id     String @id @default(uuid()) // Maps to Supabase Auth ID
   email  String @unique
   roleId Int
   role   Role   @relation(fields: [roleId], references: [id])
 
-  student Student?
+  parent  Parent?
   teacher Teacher?
 
   isActive Boolean @default(true) // Soft Delete Status
@@ -30,19 +29,32 @@ model User {
   updatedAt DateTime @updatedAt
 }
 
-model Student {
+// Parent model - can have multiple students (children)
+model Parent {
   id     String @id @default(uuid())
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  nis         String?  @unique // Student ID (e.g., 2026001) - Nullable during migration
+  name        String
+  phoneNumber String
+  address     String
+
+  students Student[] // One parent can have multiple students
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Student {
+  id       String @id @default(uuid())
+  parentId String
+  parent   Parent @relation(fields: [parentId], references: [id], onDelete: Cascade)
+
+  nis         String?  @unique // Student ID (e.g., 2026001)
   fullName    String
   dateOfBirth DateTime
-  parentName  String
-  address     String
-  phoneNumber String
 
-  scores Score[]
+  scores   Score[]
   payments Payment[]
 
   createdAt DateTime @default(now())
@@ -84,19 +96,52 @@ model Score {
 }
 
 model Payment {
-  id        String   @id @default(uuid())
+  id        String  @id @default(uuid())
   studentId String
-  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  
-  amount    Int      @default(0)
-  month     Int
-  year      Int
-  
-  status    String   @default("UNPAID")
-  paidAt    DateTime?
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  amount Int    @default(0)
+  month  Int
+  year   Int
+
+  status String    @default("UNPAID")
+  paidAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([studentId, month, year])
+}
+
+// Pre User - for approval workflow (formerly PendingRegistration)
+model PreUser {
+  id String @id @default(uuid())
+
+  // Parent/User Info
+  email       String
+  password    String // Store hashed or we'll handle it differently
+  parentName  String
+  phoneNumber String
+  address     String
+
+  // Student Info
+  studentFullName String
+  dateOfBirth     DateTime
+
+  // If this is an existing parent adding another child
+  existingParentId String? // If not null, this is an add-student request from existing parent
+
+  // Approval status
+  status String @default("PENDING") // PENDING, APPROVED, REJECTED
+
+  // Admin who approved/rejected
+  reviewedBy   String?
+  reviewedAt   DateTime?
+  rejectionReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([email])
 }

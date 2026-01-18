@@ -9,14 +9,16 @@ import { Pencil, X } from 'lucide-react'
 import { useFormStatus } from 'react-dom'
 import { useToast } from '@/context/ToastContext'
 
-type Student = {
+type StudentWithParent = {
     id: string
     nis?: string | null
     fullName: string
-    parentName: string
     dateOfBirth: Date
-    phoneNumber: string
-    address: string
+    parent: {
+        name: string
+        phoneNumber: string
+        address: string
+    }
 }
 
 function SubmitButton() {
@@ -28,7 +30,7 @@ function SubmitButton() {
     )
 }
 
-export function EditStudentModal({ student }: { student: Student }) {
+export function EditStudentModal({ student }: { student: StudentWithParent }) {
     const [isOpen, setIsOpen] = useState(false)
     const { showToast } = useToast()
 
@@ -76,7 +78,7 @@ export function EditStudentModal({ student }: { student: Student }) {
                     )}
 
                     <div className="space-y-2">
-                        <Label htmlFor="fullName">Nama Lengkap</Label>
+                        <Label htmlFor="fullName">Nama Lengkap Santri</Label>
                         <Input id="fullName" name="fullName" defaultValue={student.fullName} required />
                     </div>
 
@@ -87,18 +89,18 @@ export function EditStudentModal({ student }: { student: Student }) {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="parentName">Nama Orang Tua</Label>
-                            <Input id="parentName" name="parentName" defaultValue={student.parentName} required />
+                            <Input id="parentName" name="parentName" defaultValue={student.parent.name} required />
                         </div>
                     </div>
 
                     <div className="space-y-2">
                         <Label htmlFor="phoneNumber">Nomor WhatsApp</Label>
-                        <Input id="phoneNumber" name="phoneNumber" defaultValue={student.phoneNumber} required />
+                        <Input id="phoneNumber" name="phoneNumber" defaultValue={student.parent.phoneNumber} required />
                     </div>
 
                     <div className="space-y-2">
                         <Label htmlFor="address">Alamat</Label>
-                        <Input id="address" name="address" defaultValue={student.address} required />
+                        <Input id="address" name="address" defaultValue={student.parent.address} required />
                     </div>
 
                     <div className="flex justify-end gap-2 pt-4">

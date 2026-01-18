@@ -3,15 +3,22 @@ import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import prisma from '@/lib/prisma'
 import { redirect } from 'next/navigation'
+import { encrypt } from '@/lib/encryption'
 
 const schema = z.object({
-    fullName: z.string().min(2, "Nama lengkap harus diisi"),
+    fullName: z.string().min(2, "Nama lengkap santri harus diisi"),
     email: z.string().email("Email tidak valid"),
     password: z.string().min(6, "Password minimal 6 karakter"),
     dateOfBirth: z.string().refine(val => !isNaN(Date.parse(val)), "Tanggal lahir tidak valid"),
     parentName: z.string().min(2, "Nama orang tua harus diisi"),
     address: z.string().min(5, "Alamat harus diisi"),
     phoneNumber: z.string().min(10, "Nomor HP tidak valid"),
+})
+
+// Schema for adding a new student to existing parent
+const addStudentSchema = z.object({
+    fullName: z.string().min(2, "Nama lengkap santri harus diisi"),
+    dateOfBirth: z.string().refine(val => !isNaN(Date.parse(val)), "Tanggal lahir tidak valid"),
 })
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -47,42 +54,79 @@ export async function registerStudent(prevState: any, formData: FormData) {
         }
     }
 
+    // PUBLIC REGISTRATION - Create Pending Registration (Requires Approval)
+    if (!isAdmin) {
+        try {
+            // Check if email already has a pending registration
+            const existingPending = await prisma.preUser.findFirst({
+                where: {
+                    email,
+                    status: 'PENDING'
+                }
+            })
+
+            if (existingPending) {
+                return { error: 'Email ini sudah memiliki pendaftaran yang menunggu persetujuan admin.' }
+            }
+
+            // Check if email already exists in the system
+            const existingUser = await prisma.user.findUnique({
+                where: { email }
+            })
+
+            if (existingUser) {
+                return { error: 'Email ini sudah terdaftar di sistem. Silakan login atau gunakan email lain.' }
+            }
+
+            // Create pending registration
+            await prisma.preUser.create({
+                data: {
+                    email,
+                    password: encrypt(password), // Store encrypted
+                    parentName,
+                    phoneNumber,
+                    address,
+                    studentFullName: fullName,
+                    dateOfBirth: new Date(dateOfBirth),
+                    status: 'PENDING'
+                }
+            })
+
+            return {
+                success: true,
+                message: 'Pendaftaran berhasil dikirim! Akun Anda akan diaktifkan setelah admin menyetujui pendaftaran. Anda akan menerima email konfirmasi.',
+                isPending: true
+            }
+        } catch (e: unknown) {
+            console.error('Pending Registration Error:', e)
+            return { error: 'Gagal mengirim pendaftaran: ' + (e as Error).message }
+        }
+    }
+
+    // ADMIN REGISTRATION - Create account immediately (no approval needed)
     let authData, authError
 
-    if (isAdmin) {
-        // Admin creating user: Use Service Role to skip verification
-        const { createClient: createServiceClient } = await import('@supabase/supabase-js')
-        const supabaseAdmin = createServiceClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY!,
-            {
-                auth: {
-                    autoRefreshToken: false,
-                    persistSession: false
-                }
+    // Admin creating user: Use Service Role to skip verification
+    const { createClient: createServiceClient } = await import('@supabase/supabase-js')
+    const supabaseAdmin = createServiceClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        {
+            auth: {
+                autoRefreshToken: false,
+                persistSession: false
             }
-        )
+        }
+    )
 
-        const result = await supabaseAdmin.auth.admin.createUser({
-            email,
-            password,
-            email_confirm: true,
-            user_metadata: { fullName }
-        })
-        authData = result.data
-        authError = result.error
-    } else {
-        // Regular signup
-        const result = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-                emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/callback`,
-            }
-        })
-        authData = result.data
-        authError = result.error
-    }
+    const result = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { fullName: parentName }
+    })
+    authData = result.data
+    authError = result.error
 
     if (authError) {
         console.error('Supabase Auth Error')
@@ -94,41 +138,44 @@ export async function registerStudent(prevState: any, formData: FormData) {
         return { error: 'Pendaftaran gagal. Silakan coba lagi.' }
     }
 
-    // User might need email confirmation - check if session exists
-    const sessionExists = 'session' in authData && authData.session
-    if (!sessionExists && !isAdmin) {
-        // User created in auth but needs to confirm email (only log for regular users)
-        // Still create the database records
-    }
-
     // 2. Create DB records
     try {
         // Ensure Role exists (or find it)
-        const studentRole = await prisma.role.upsert({
-            where: { name: 'student' },
+        const parentRole = await prisma.role.upsert({
+            where: { name: 'parent' },
             update: {},
-            create: { name: 'student' }
+            create: { name: 'parent' }
         })
 
-        // Create User and Student
+        // Create User, Parent, and Student
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await prisma.$transaction(async (tx: any) => {
-            // Check if user already exists (shouldn't if Auth succeeded, but sync issues possible)
+            // Check if user already exists
             const existingUser = await tx.user.findUnique({ where: { id: authData.user!.id } })
             if (!existingUser) {
+                // Create User with parent role
                 const user = await tx.user.create({
                     data: {
                         id: authData.user!.id,
                         email,
-                        roleId: studentRole.id, // Assign Student Role
+                        roleId: parentRole.id,
+                    }
+                })
+
+                // Create Parent profile
+                const parent = await tx.parent.create({
+                    data: {
+                        userId: user.id,
+                        name: parentName,
+                        phoneNumber,
+                        address,
                     }
                 })
 
                 // Generate NIS: Year + Sequential Number (e.g., 2026001)
                 const currentYear = new Date().getFullYear()
-                const yearStart = new Date(currentYear, 0, 1) // January 1st of current year
+                const yearStart = new Date(currentYear, 0, 1)
 
-                // Count students created this year
                 const studentsThisYear = await tx.student.count({
                     where: {
                         createdAt: {
@@ -137,50 +184,88 @@ export async function registerStudent(prevState: any, formData: FormData) {
                     }
                 })
 
-                // Generate NIS: YYYY + 3-digit sequential number
                 const sequentialNumber = (studentsThisYear + 1).toString().padStart(3, '0')
                 const nis = `${currentYear}${sequentialNumber}`
 
+                // Create Student linked to Parent
                 await tx.student.create({
                     data: {
-                        userId: user.id,
+                        parentId: parent.id,
                         nis,
                         fullName,
                         dateOfBirth: new Date(dateOfBirth),
-                        parentName,
-                        address,
-                        phoneNumber
                     }
                 })
             }
         })
     } catch (e: unknown) {
         console.error('Registration Error')
-        // If DB fails, we technically have an orphaned Auth user. 
-        // For this MVP, we just return error.
         return { error: 'Gagal menyimpan data siswa: ' + (e as Error).message }
     }
 
-    // Check for session only if it's a regular signup (or if we want to auto-login)
-    // For admin creation, we won't have a session for the NEW user
-    const hasSession = 'session' in authData && authData.session
+    return {
+        success: true,
+        message: 'Siswa berhasil ditambahkan oleh Admin (Akun Aktif).',
+    }
+}
 
-    if (hasSession) {
-        // User is logged in, redirect to dashboard
-        redirect('/dashboard/student')
-    } else {
-        if (isAdmin) {
-            return {
-                success: true,
-                message: 'Siswa berhasil ditambahkan oleh Admin (Akun Aktif).',
-            }
+// Add another student to existing parent account
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function addStudentToParent(prevState: any, formData: FormData) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { error: 'Anda harus login terlebih dahulu' }
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data: any = Object.fromEntries(formData)
+    const parsed = addStudentSchema.safeParse(data)
+
+    if (!parsed.success) {
+        const errors: Record<string, string> = {}
+        parsed.error.issues.forEach(issue => {
+            if (issue.path[0]) errors[issue.path[0].toString()] = issue.message
+        })
+        return { error: 'Mohon perbaiki isian form', fieldErrors: errors }
+    }
+
+    const { fullName, dateOfBirth } = parsed.data
+
+    try {
+        // Find parent by user ID
+        const parent = await prisma.parent.findUnique({
+            where: { userId: user.id },
+            include: { user: true }
+        })
+
+        if (!parent) {
+            return { error: 'Data orang tua tidak ditemukan' }
         }
 
-        // User needs to confirm email
+        // Create pending registration for additional student
+        await prisma.preUser.create({
+            data: {
+                email: parent.user.email,
+                password: '', // Not needed for existing parent
+                parentName: parent.name,
+                phoneNumber: parent.phoneNumber,
+                address: parent.address,
+                studentFullName: fullName,
+                dateOfBirth: new Date(dateOfBirth),
+                existingParentId: parent.id, // Mark as existing parent adding child
+                status: 'PENDING'
+            }
+        })
+
         return {
             success: true,
-            message: 'Pendaftaran berhasil! Silakan cek email Anda untuk verifikasi akun.',
-            needsEmailConfirmation: true
+            message: `Permintaan penambahan santri "${fullName}" telah dikirim dan menunggu persetujuan admin.`,
+            isPending: true
         }
+    } catch (e: unknown) {
+        console.error('Add Student Error:', e)
+        return { error: 'Gagal mengirim permintaan: ' + (e as Error).message }
     }
 }

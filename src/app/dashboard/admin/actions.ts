@@ -1,15 +1,50 @@
 'use server'
 import prisma from '@/lib/prisma'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
 export async function deleteStudent(studentId: string) {
     try {
-        const student = await prisma.student.findUnique({ where: { id: studentId } })
+        const student = await prisma.student.findUnique({
+            where: { id: studentId },
+            include: { parent: true }
+        })
         if (!student) return { error: 'Student not found' }
 
-        // Delete the User (cascades to Student and Scores)
-        await prisma.user.delete({ where: { id: student.userId } })
+        // Check if this is the only student for this parent
+        const siblingCount = await prisma.student.count({
+            where: { parentId: student.parentId }
+        })
+
+        if (siblingCount === 1) {
+            // This is the only student, delete Parent and User too
+
+            // Delete from Supabase Auth
+            const supabaseAdmin = createServiceClient(
+                process.env.NEXT_PUBLIC_SUPABASE_URL!,
+                process.env.SUPABASE_SERVICE_ROLE_KEY!,
+                {
+                    auth: {
+                        autoRefreshToken: false,
+                        persistSession: false
+                    }
+                }
+            )
+
+            const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(student.parent.userId)
+
+            if (authError) {
+                console.error('Failed to delete Supabase user:', authError)
+                // We continue to delete from DB even if Auth delete fails (or maybe throw? 
+                // typically we want to clean up DB primarily)
+            }
+
+            await prisma.user.delete({ where: { id: student.parent.userId } })
+        } else {
+            // Just delete the student
+            await prisma.student.delete({ where: { id: studentId } })
+        }
 
         revalidatePath('/dashboard/admin')
         return { success: true }
@@ -27,6 +62,7 @@ const updateSchema = z.object({
     address: z.string(),
 })
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function updateStudent(prevState: any, formData: FormData) {
     try {
         const data = Object.fromEntries(formData)
@@ -36,16 +72,36 @@ export async function updateStudent(prevState: any, formData: FormData) {
             return { error: 'Invalid data' }
         }
 
-        const { id, ...updateData } = parsed.data
+        const { id, fullName, parentName, dateOfBirth, phoneNumber, address } = parsed.data
 
+        // Get student with parent
+        const student = await prisma.student.findUnique({
+            where: { id },
+            include: { parent: true }
+        })
+
+        if (!student) {
+            return { error: 'Student not found' }
+        }
+
+        // Update student data
         await prisma.student.update({
             where: { id },
             data: {
-                ...updateData,
-                dateOfBirth: new Date(updateData.dateOfBirth)
+                fullName,
+                dateOfBirth: new Date(dateOfBirth)
             }
         })
 
+        // Update parent data
+        await prisma.parent.update({
+            where: { id: student.parentId },
+            data: {
+                name: parentName,
+                phoneNumber,
+                address
+            }
+        })
 
         revalidatePath('/dashboard/admin')
         return { success: true, message: 'Data santri berhasil diperbarui' }
@@ -58,13 +114,13 @@ export async function toggleUserStatus(studentId: string, isActive: boolean) {
     try {
         const student = await prisma.student.findUnique({
             where: { id: studentId },
-            select: { userId: true }
+            include: { parent: true }
         })
 
         if (!student) return { error: 'Student not found' }
 
         await prisma.user.update({
-            where: { id: student.userId },
+            where: { id: student.parent.userId },
             data: { isActive }
         })
 

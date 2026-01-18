@@ -8,6 +8,7 @@ export default async function StudentGradePage({ params }: { params: Promise<{ s
     const student = await prisma.student.findUnique({
         where: { id: studentId },
         include: {
+            parent: true,
             scores: {
                 orderBy: { createdAt: 'desc' },
                 include: { teacher: true }
@@ -86,12 +87,20 @@ export default async function StudentGradePage({ params }: { params: Promise<{ s
                             <p className="font-medium">{student.fullName}</p>
                         </div>
                         <div>
+                            <p className="text-xs text-muted-foreground">NIS</p>
+                            <p className="font-medium font-mono">{student.nis || '-'}</p>
+                        </div>
+                        <div>
                             <p className="text-xs text-muted-foreground">Orang Tua</p>
-                            <p className="font-medium">{student.parentName}</p>
+                            <p className="font-medium">{student.parent.name}</p>
                         </div>
                         <div>
                             <p className="text-xs text-muted-foreground">Alamat</p>
-                            <p className="font-medium">{student.address}</p>
+                            <p className="font-medium">{student.parent.address}</p>
+                        </div>
+                        <div>
+                            <p className="text-xs text-muted-foreground">No. HP</p>
+                            <p className="font-medium">{student.parent.phoneNumber}</p>
                         </div>
                     </div>
                 </div>

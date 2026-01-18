@@ -1,14 +1,25 @@
 'use client'
 
 import { useActionState } from 'react'
+import { useEffect } from 'react'
 import { registerStudent } from './actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { PasswordInput } from '@/components/ui/password-input'
+import { useToast } from '@/context/ToastContext'
 
 export default function RegisterForm() {
+    const { showToast } = useToast()
     const [state, action, isPending] = useActionState(registerStudent, null)
+
+    useEffect(() => {
+        if (state?.success) {
+            showToast(state.message, 'success')
+        } else if (state?.error) {
+            showToast(state.error, 'error')
+        }
+    }, [state, showToast])
 
     return (
         <div className="w-full max-w-2xl bg-card border rounded-xl shadow-lg p-8">
@@ -18,6 +29,35 @@ export default function RegisterForm() {
             </div>
 
             <form action={action} className="space-y-6">
+                {/* Success Message - Pending Approval */}
+                {state?.success && state?.isPending && (
+                    <div className="bg-blue-50 border-2 border-blue-500 rounded-lg p-6 space-y-4">
+                        <div className="flex items-start gap-3">
+                            <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-lg font-bold text-blue-900 mb-2">Pendaftaran Sedang Diproses! ⏳</h3>
+                                <p className="text-blue-800 mb-3">{state.message}</p>
+                                <div className="bg-white rounded-md p-4 border border-blue-200">
+                                    <p className="font-semibold text-blue-900 mb-2">Yang Perlu Anda Ketahui:</p>
+                                    <ul className="list-disc list-inside space-y-1 text-sm text-blue-800">
+                                        <li>Pendaftaran Anda akan ditinjau oleh admin TPA</li>
+                                        <li>Anda akan menerima email konfirmasi setelah disetujui</li>
+                                        <li>Proses review biasanya memakan waktu 1-2 hari kerja</li>
+                                        <li>Silakan hubungi admin jika ada pertanyaan</li>
+                                    </ul>
+                                    <p className="text-xs text-blue-600 mt-3">
+                                        💡 Terima kasih atas kesabaran Anda!
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Success Message - Email Confirmation Required */}
                 {state?.success && state?.needsEmailConfirmation && (
                     <div className="bg-emerald-50 border-2 border-emerald-500 rounded-lg p-6 space-y-4">
