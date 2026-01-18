@@ -76,7 +76,7 @@ export async function createTeacher(prevState: any, formData: FormData) {
         })
 
     } catch (error: any) {
-        console.error('Create Teacher Error:', error)
+        console.error('Create Teacher Error')
         return { error: error.message || 'Gagal menyimpan data pengajar' }
     }
 
@@ -97,7 +97,7 @@ export async function deleteTeacher(teacherId: string) {
         const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(teacher.userId)
 
         if (authError) {
-            console.error('Error deleting auth user:', authError)
+            console.error('Error deleting auth user')
             // Continue to delete DB record anyway to keep clean
         }
 

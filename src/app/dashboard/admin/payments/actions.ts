@@ -22,10 +22,11 @@ export async function getStudentsWithPaymentStatus(month: number, year: number) 
         return students.map(student => ({
             ...student,
             status: student.payments[0]?.status || 'UNPAID',
-            paymentId: student.payments[0]?.id
+            paymentId: student.payments[0]?.id,
+            phoneNumber: student.phoneNumber
         }))
     } catch (error) {
-        console.error("Error fetching students with payment status:", error)
+        console.error("Error fetching students with payment status")
         throw new Error("Failed to fetch payment status")
     }
 }
@@ -57,7 +58,7 @@ export async function markPayment(studentId: string, month: number, year: number
         revalidatePath('/dashboard/student')
         return { success: true }
     } catch (error) {
-        console.error("Error updating payment:", error)
+        console.error("Error updating payment")
         return { success: false, error: "Failed to update payment" }
     }
 }
@@ -94,7 +95,7 @@ export async function markBulkPayment(studentIds: string[], month: number, year:
         revalidatePath('/dashboard/student')
         return { success: true }
     } catch (error) {
-        console.error("Error updating bulk payments:", error)
+        console.error("Error updating bulk payments")
         return { success: false, error: "Failed to update bulk payments" }
     }
 }
@@ -111,7 +112,7 @@ export async function getStudentPayments(studentId: string) {
             ]
         })
     } catch (error) {
-        console.error("Error fetching student payments:", error)
+        console.error("Error fetching student payments")
         return []
     }
 }

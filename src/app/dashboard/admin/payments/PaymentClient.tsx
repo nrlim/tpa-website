@@ -18,6 +18,7 @@ interface StudentPayment {
     nis: string | null
     status: string // "PAID" | "UNPAID"
     paymentId?: string
+    phoneNumber: string
 }
 
 interface PaymentClientProps {
@@ -55,6 +56,43 @@ export default function PaymentClient({ initialStudents, currentMonth, currentYe
         } catch (error) {
             alert("Failed to update payment")
         }
+    }
+
+    const handleWhatsApp = (student: StudentPayment) => {
+        if (!student.phoneNumber) return
+
+        let phone = student.phoneNumber
+        // Basic formatting: ensure starts with 62, remove 0 or + at start
+        phone = phone.replace(/\D/g, '')
+        if (phone.startsWith('0')) {
+            phone = '62' + phone.slice(1)
+        }
+
+        const monthName = MONTHS[currentMonth - 1]
+
+        const message = `Assalamu'alaikum Warahmatullahi Wabarakatuh,
+
+Yth. Bapak/Ibu Wali Santri
+*${student.fullName}*
+
+Semoga Bapak/Ibu senantiasa dalam keadaan sehat walafiat.
+
+Kami dari Admin TPA Nurul Iman ingin mengingatkan mengenai pembayaran SPP (Syahriah) Ananda untuk periode:
+Bulan: *${monthName} ${currentYear}*
+Status: *BELUM LUNAS*
+
+Mohon kesediaannya untuk dapat segera menyelesaikan administrasi tersebut.
+
+Atas perhatian dan kerja samanya, kami ucapkan terima kasih.
+_Jazakumullahu Khairan Katsiran._
+
+Wassalamu'alaikum Warahmatullahi Wabarakatuh.
+
+---
+_Pesan ini dikirim melalui Sistem Informasi TPA Nurul Iman_`
+
+        const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+        window.open(url, '_blank')
     }
 
     // Selection Logic
@@ -189,7 +227,7 @@ export default function PaymentClient({ initialStudents, currentMonth, currentYe
                             <th className="p-4 font-medium">Student Name</th>
                             <th className="p-4 font-medium">NIS</th>
                             <th className="p-4 font-medium">Status</th>
-                            <th className="p-4 font-medium">Action</th>
+                            <th className="p-4 font-medium text-right">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -215,14 +253,27 @@ export default function PaymentClient({ initialStudents, currentMonth, currentYe
                                         {student.status}
                                     </Badge>
                                 </td>
-                                <td className="p-4">
-                                    <Button
-                                        size="sm"
-                                        variant={student.status === 'PAID' ? "outline" : "default"}
-                                        onClick={() => handleTogglePayment(student.id, student.status)}
-                                    >
-                                        {student.status === 'PAID' ? "Mark Unpaid" : "Mark Paid"}
-                                    </Button>
+                                <td className="p-4 text-right">
+                                    <div className="flex justify-end gap-2">
+                                        {student.status === 'UNPAID' && (
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700"
+                                                onClick={() => handleWhatsApp(student)}
+                                                title="Send WhatsApp Reminder"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-message-circle"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z" /></svg>
+                                            </Button>
+                                        )}
+                                        <Button
+                                            size="sm"
+                                            variant={student.status === 'PAID' ? "outline" : "default"}
+                                            onClick={() => handleTogglePayment(student.id, student.status)}
+                                        >
+                                            {student.status === 'PAID' ? "Mark Unpaid" : "Mark Paid"}
+                                        </Button>
+                                    </div>
                                 </td>
                             </tr>
                         ))}

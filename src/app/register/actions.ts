@@ -34,23 +34,16 @@ export async function registerStudent(prevState: any, formData: FormData) {
     const supabase = await createClient()
 
     // 1. SignUp with Supabase
-    console.log('Attempting to create user in Supabase Auth:', email)
     const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
-            emailRedirectTo: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/callback`,
+            emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/callback`,
         }
     })
 
-    console.log('Supabase signup response:', {
-        user: authData?.user?.id,
-        error: authError?.message,
-        session: !!authData?.session
-    })
-
     if (authError) {
-        console.error('Supabase Auth Error:', authError)
+        console.error('Supabase Auth Error')
         return { error: authError.message }
     }
 
@@ -61,7 +54,6 @@ export async function registerStudent(prevState: any, formData: FormData) {
 
     // User might need email confirmation - check if session exists
     if (!authData.session) {
-        console.log('User created but needs email confirmation')
         // User created in auth but needs to confirm email
         // Still create the database records
     }
@@ -120,7 +112,7 @@ export async function registerStudent(prevState: any, formData: FormData) {
             }
         })
     } catch (e: unknown) {
-        console.error('Registration Error:', e)
+        console.error('Registration Error')
         // If DB fails, we technically have an orphaned Auth user. 
         // For this MVP, we just return error.
         return { error: 'Gagal menyimpan data siswa: ' + (e as Error).message }
