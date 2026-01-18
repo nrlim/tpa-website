@@ -10,6 +10,11 @@ interface ConfirmDialogProps {
     title: string
     description: string
     isLoading?: boolean
+    confirmConfig?: {
+        label: string
+        variant: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link'
+        icon?: string
+    }
 }
 
 export function ConfirmDialog({
@@ -18,7 +23,8 @@ export function ConfirmDialog({
     onConfirm,
     title,
     description,
-    isLoading
+    isLoading,
+    confirmConfig
 }: ConfirmDialogProps) {
     if (!isOpen) return null
 
@@ -27,8 +33,8 @@ export function ConfirmDialog({
             <div className="w-full max-w-md rounded-lg bg-background p-6 shadow-lg animate-in zoom-in duration-200">
                 {/* Icon */}
                 <div className="flex justify-center mb-4">
-                    <div className="rounded-full bg-destructive/10 p-3">
-                        <AlertCircle className="h-8 w-8 text-destructive" />
+                    <div className={`rounded-full p-3 ${confirmConfig?.variant === 'default' ? 'bg-primary/10' : 'bg-destructive/10'}`}>
+                        <AlertCircle className={`h-8 w-8 ${confirmConfig?.variant === 'default' ? 'text-primary' : 'text-destructive'}`} />
                     </div>
                 </div>
 
@@ -51,12 +57,12 @@ export function ConfirmDialog({
                         Batal
                     </Button>
                     <Button
-                        variant="destructive"
+                        variant={confirmConfig?.variant || "destructive"}
                         onClick={onConfirm}
                         disabled={isLoading}
                         className="flex-1"
                     >
-                        {isLoading ? 'Menghapus...' : 'Ya, Hapus'}
+                        {isLoading ? 'Memproses...' : (confirmConfig?.label || 'Ya, Hapus')}
                     </Button>
                 </div>
             </div>

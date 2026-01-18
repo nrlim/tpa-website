@@ -21,6 +21,25 @@ export default async function DashboardLayout({ children }: { children: React.Re
         include: { role: true }
     })
 
+    if (dbUser && !dbUser.isActive) {
+        // Force signOut or redirect to an error page saying account is inactive
+        // Since we are server-side here, we can't easily clear client cookies except via Redirect to a route that does it.
+        // For now, let's redirect to a specific error page or back to home with a query param?
+        // Or better, redirect to a special 'inactive' page.
+        // But for simplicity, let's redirect to logout (which is an action usually). 
+        // We will redirect to /login?error=AccountDisabled
+        // Ideally we should sign them out properly.
+        return (
+            <div className="min-h-screen flex items-center justify-center flex-col gap-4">
+                <h1 className="text-2xl font-bold text-destructive">Account Deactivated</h1>
+                <p>Your account has been deactivated by the administrator.</p>
+                <form action={signOut}>
+                    <Button variant="destructive">Logout</Button>
+                </form>
+            </div>
+        )
+    }
+
     // If check role and redirect? Maybe not in layout to avoid infinite loops if paths are mixed. 
     // Individual pages protect themselves or middleware does.
 

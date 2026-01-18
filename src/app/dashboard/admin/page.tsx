@@ -1,5 +1,6 @@
 import prisma from '@/lib/prisma'
 import { DeleteButton } from './DeleteButton'
+import { ToggleStatusButton } from './ToggleStatusButton'
 import { EditStudentModal } from './EditStudentModal'
 import { deleteStudent } from './actions'
 import Link from 'next/link'
@@ -37,11 +38,13 @@ export default async function AdminDashboard({
         ]
     } : {};
 
+
     const students = await prisma.student.findMany({
         where,
         take: pageSize,
         skip: (page - 1) * pageSize,
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'desc' },
+        include: { user: true }
     })
 
     const total = await prisma.student.count({ where })
@@ -78,6 +81,7 @@ export default async function AdminDashboard({
                                 <th className="h-12 px-4 align-middle font-medium">Nama Lengkap</th>
                                 <th className="h-12 px-4 align-middle font-medium">Orang Tua</th>
                                 <th className="h-12 px-4 align-middle font-medium">Umur</th>
+                                <th className="h-12 px-4 align-middle font-medium">Status</th>
                                 <th className="h-12 px-4 align-middle font-medium text-right">Aksi</th>
                             </tr>
                         </thead>
@@ -98,8 +102,14 @@ export default async function AdminDashboard({
                                             {calculateAge(s.dateOfBirth)} tahun
                                         </span>
                                     </td>
+                                    <td className="p-4 align-middle">
+                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${s.user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                            {s.user.isActive ? 'Active' : 'Inactive'}
+                                        </span>
+                                    </td>
                                     <td className="p-4 align-middle text-right">
                                         <div className="flex justify-end gap-2">
+                                            <ToggleStatusButton studentId={s.id} isActive={s.user.isActive} />
                                             <EditStudentModal student={s} />
                                             <DeleteButton action={deleteStudent.bind(null, s.id)} />
                                         </div>
@@ -108,7 +118,7 @@ export default async function AdminDashboard({
                             ))}
                             {students.length === 0 && (
                                 <tr>
-                                    <td colSpan={5} className="p-8 text-center text-muted-foreground">Tidak ada data santri ditemukan.</td>
+                                    <td colSpan={6} className="p-8 text-center text-muted-foreground">Tidak ada data santri ditemukan.</td>
                                 </tr>
                             )}
                         </tbody>

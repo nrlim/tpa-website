@@ -46,8 +46,30 @@ export async function updateStudent(prevState: any, formData: FormData) {
             }
         })
 
+
         revalidatePath('/dashboard/admin')
         return { success: true, message: 'Data santri berhasil diperbarui' }
+    } catch (error: unknown) {
+        return { error: (error as Error).message }
+    }
+}
+
+export async function toggleUserStatus(studentId: string, isActive: boolean) {
+    try {
+        const student = await prisma.student.findUnique({
+            where: { id: studentId },
+            select: { userId: true }
+        })
+
+        if (!student) return { error: 'Student not found' }
+
+        await prisma.user.update({
+            where: { id: student.userId },
+            data: { isActive }
+        })
+
+        revalidatePath('/dashboard/admin')
+        return { success: true }
     } catch (error: unknown) {
         return { error: (error as Error).message }
     }
