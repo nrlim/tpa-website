@@ -58,35 +58,6 @@ export default function RegisterForm() {
                     </div>
                 )}
 
-                {/* Success Message - Email Confirmation Required */}
-                {state?.success && state?.needsEmailConfirmation && (
-                    <div className="bg-emerald-50 border-2 border-emerald-500 rounded-lg p-6 space-y-4">
-                        <div className="flex items-start gap-3">
-                            <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
-                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                </svg>
-                            </div>
-                            <div className="flex-1">
-                                <h3 className="text-lg font-bold text-emerald-900 mb-2">Pendaftaran Berhasil! 🎉</h3>
-                                <p className="text-emerald-800 mb-3">{state.message}</p>
-                                <div className="bg-white rounded-md p-4 border border-emerald-200">
-                                    <p className="font-semibold text-emerald-900 mb-2">Langkah Selanjutnya:</p>
-                                    <ol className="list-decimal list-inside space-y-1 text-sm text-emerald-800">
-                                        <li>Buka inbox email Anda</li>
-                                        <li>Cari email dari TPA Nurul Iman Baltic</li>
-                                        <li>Klik link verifikasi di dalam email</li>
-                                        <li>Setelah verifikasi, Anda bisa login</li>
-                                    </ol>
-                                    <p className="text-xs text-emerald-600 mt-3">
-                                        💡 Tidak menerima email? Cek folder spam/junk Anda
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
                 {/* Error Message */}
                 {state?.error && (
                     <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md border border-destructive/20">
