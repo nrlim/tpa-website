@@ -40,6 +40,7 @@ model Student {
   phoneNumber String
 
   scores Score[]
+  payments Payment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -77,4 +78,22 @@ model Score {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Payment {
+  id        String   @id @default(uuid())
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  amount    Int      @default(0)
+  month     Int
+  year      Int
+  
+  status    String   @default("UNPAID")
+  paidAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([studentId, month, year])
 }

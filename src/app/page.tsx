@@ -447,8 +447,30 @@ export default function Home() {
                   <Clock className="w-6 h-6 text-secondary" />
                   Jam Operasional
                 </h3>
-                <p className="text-white/80">Senin - Jumat: 15.00 - 17.30 WIB</p>
-                <p className="text-white/80">Sabtu: 09.00 - 11.00 WIB</p>
+                <div className="space-y-4">
+                  <div className="inline-block px-3 py-1 bg-secondary/20 rounded-lg text-secondary font-semibold text-sm">
+                    Senin - Jumat
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-white/5 p-3 rounded-lg border border-white/10 hover:border-secondary/50 transition-colors">
+                      <p className="text-secondary text-xs font-bold uppercase tracking-wider mb-1">Pagi</p>
+                      <p className="text-white font-mono text-sm">09:00 - 10:15</p>
+                    </div>
+                    <div className="bg-white/5 p-3 rounded-lg border border-white/10 hover:border-secondary/50 transition-colors">
+                      <p className="text-secondary text-xs font-bold uppercase tracking-wider mb-1">Siang</p>
+                      <p className="text-white font-mono text-sm">10:30 - 11:45</p>
+                    </div>
+                    <div className="bg-white/5 p-3 rounded-lg border border-white/10 hover:border-secondary/50 transition-colors">
+                      <p className="text-secondary text-xs font-bold uppercase tracking-wider mb-1">Sore</p>
+                      <p className="text-white font-mono text-sm">16:00 - 17:15</p>
+                    </div>
+                    <div className="bg-white/5 p-3 rounded-lg border border-white/10 hover:border-secondary/50 transition-colors">
+                      <p className="text-secondary text-xs font-bold uppercase tracking-wider mb-1">Malam</p>
+                      <p className="text-white font-mono text-sm">18:30 - 19:40</p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="glass-dark rounded-2xl p-6">
@@ -456,8 +478,8 @@ export default function Home() {
                   <Users className="w-6 h-6 text-secondary" />
                   Kontak
                 </h3>
-                <p className="text-white/80">WhatsApp: +62 812-3456-7890</p>
-                <p className="text-white/80">Email: info@tpanuruliman.com</p>
+                <p className="text-white/80">WhatsApp: +62 xxx-xxx-xxx</p>
+                <p className="text-white/80">Email: tpanurulimanbaltic@gmail.com</p>
               </div>
 
               <div className="glass-dark rounded-2xl p-6">
@@ -466,7 +488,7 @@ export default function Home() {
                   Lokasi
                 </h3>
                 <p className="text-white/80">Masjid Nurul Iman</p>
-                <p className="text-white/80">Baltic Area, Jakarta</p>
+                <p className="text-white/80">Baltic Area, Kab Bekasi</p>
               </div>
             </div>
           </div>

@@ -42,15 +42,15 @@ export function Footer() {
                         <div className="space-y-4 text-slate-400">
                             <p className="flex items-start gap-3">
                                 <span className="text-white font-semibold min-w-[60px]">Alamat:</span>
-                                <span>Masjid Nurul Iman, Baltic Area, Jakarta</span>
+                                <span>Masjid Nurul Iman, Baltic Area, Kab Bekasi</span>
                             </p>
                             <p className="flex items-center gap-3">
                                 <span className="text-white font-semibold min-w-[60px]">Phone:</span>
-                                <span>+62 812-3456-7890</span>
+                                <span>+62 xxx-xxx-xxx</span>
                             </p>
                             <p className="flex items-center gap-3">
                                 <span className="text-white font-semibold min-w-[60px]">Email:</span>
-                                <span>info@tpanuruliman.com</span>
+                                <span>tpanurulimanbaltic@gmail.com</span>
                             </p>
                         </div>
                     </div>

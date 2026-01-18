@@ -51,6 +51,9 @@ export default async function AdminDashboard({
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h1 className="text-3xl font-bold tracking-tight">Data Santri</h1>
                 <div className="flex gap-2">
+                    <Link href="/dashboard/admin/payments" className={buttonVariants({ variant: 'outline' })}>
+                        Kelola Pembayaran
+                    </Link>
                     <Link href="/dashboard/admin/teachers" className={buttonVariants({ variant: 'outline' })}>
                         Kelola Pengajar
                     </Link>
