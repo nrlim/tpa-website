@@ -33,14 +33,56 @@ export async function registerStudent(prevState: any, formData: FormData) {
 
     const supabase = await createClient()
 
-    // 1. SignUp with Supabase
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-            emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/callback`,
+    // Check if current user is an Admin
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    let isAdmin = false
+
+    if (currentUser) {
+        const dbUser = await prisma.user.findUnique({
+            where: { id: currentUser.id },
+            include: { role: true }
+        })
+        if (dbUser?.role?.name === 'admin') {
+            isAdmin = true
         }
-    })
+    }
+
+    let authData, authError
+
+    if (isAdmin) {
+        // Admin creating user: Use Service Role to skip verification
+        const { createClient: createServiceClient } = await import('@supabase/supabase-js')
+        const supabaseAdmin = createServiceClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!,
+            {
+                auth: {
+                    autoRefreshToken: false,
+                    persistSession: false
+                }
+            }
+        )
+
+        const result = await supabaseAdmin.auth.admin.createUser({
+            email,
+            password,
+            email_confirm: true,
+            user_metadata: { fullName }
+        })
+        authData = result.data
+        authError = result.error
+    } else {
+        // Regular signup
+        const result = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/callback`,
+            }
+        })
+        authData = result.data
+        authError = result.error
+    }
 
     if (authError) {
         console.error('Supabase Auth Error')
@@ -53,8 +95,9 @@ export async function registerStudent(prevState: any, formData: FormData) {
     }
 
     // User might need email confirmation - check if session exists
-    if (!authData.session) {
-        // User created in auth but needs to confirm email
+    const sessionExists = 'session' in authData && authData.session
+    if (!sessionExists && !isAdmin) {
+        // User created in auth but needs to confirm email (only log for regular users)
         // Still create the database records
     }
 
@@ -118,11 +161,21 @@ export async function registerStudent(prevState: any, formData: FormData) {
         return { error: 'Gagal menyimpan data siswa: ' + (e as Error).message }
     }
 
-    // Check if user has session (auto-login) or needs email confirmation
-    if (authData.session) {
+    // Check for session only if it's a regular signup (or if we want to auto-login)
+    // For admin creation, we won't have a session for the NEW user
+    const hasSession = 'session' in authData && authData.session
+
+    if (hasSession) {
         // User is logged in, redirect to dashboard
         redirect('/dashboard/student')
     } else {
+        if (isAdmin) {
+            return {
+                success: true,
+                message: 'Siswa berhasil ditambahkan oleh Admin (Akun Aktif).',
+            }
+        }
+
         // User needs to confirm email
         return {
             success: true,
