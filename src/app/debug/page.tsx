@@ -8,7 +8,11 @@ export default async function DebugPage() {
     const dbUsers = await prisma.user.findMany({
         include: {
             role: true,
-            student: true,
+            parent: {
+                include: {
+                    students: true
+                }
+            }
         }
     })
 
@@ -33,9 +37,9 @@ export default async function DebugPage() {
                         <p><strong>ID:</strong> {user.id}</p>
                         <p><strong>Email:</strong> {user.email}</p>
                         <p><strong>Role:</strong> {user.role.name}</p>
-                        {user.student && (
-                            <p><strong>Student Name:</strong> {user.student.fullName}</p>
-                        )}
+                        {user.parent?.students?.map((student) => (
+                            <p key={student.id}><strong>Student Name:</strong> {student.fullName}</p>
+                        ))}
                     </div>
                 ))}
             </div>

@@ -54,7 +54,7 @@ export async function getStudentsWithPaymentStatus(
             return 0
         })
     } catch (error) {
-        console.error("Error fetching students with payment status")
+        // console.error("Error fetching students with payment status")
         throw new Error("Failed to fetch payment status")
     }
 }
@@ -86,7 +86,7 @@ export async function markPayment(studentId: string, month: number, year: number
         revalidatePath('/dashboard/parent')
         return { success: true }
     } catch (error) {
-        console.error("Error updating payment")
+        // console.error("Error updating payment")
         return { success: false, error: "Failed to update payment" }
     }
 }
@@ -123,7 +123,7 @@ export async function markBulkPayment(studentIds: string[], month: number, year:
         revalidatePath('/dashboard/parent')
         return { success: true }
     } catch (error) {
-        console.error("Error updating bulk payments")
+        // console.error("Error updating bulk payments")
         return { success: false, error: "Failed to update bulk payments" }
     }
 }
@@ -140,7 +140,7 @@ export async function getStudentPayments(studentId: string) {
             ]
         })
     } catch (error) {
-        console.error("Error fetching student payments")
+        // console.error("Error fetching student payments")
         return []
     }
 }

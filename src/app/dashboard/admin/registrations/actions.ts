@@ -13,7 +13,7 @@ export async function getPendingRegistrations() {
         })
         return registrations
     } catch (error) {
-        console.error('Error fetching pending registrations:', error)
+        // console.error('Error fetching pending registrations')
         return []
     }
 }
@@ -26,7 +26,7 @@ export async function getRegistrationStats() {
         ])
         return { total, pending }
     } catch (error) {
-        console.error('Error fetching registration stats:', error)
+        // console.error('Error fetching registration stats')
         return { total: 0, pending: 0 }
     }
 }
@@ -129,11 +129,11 @@ export async function approveRegistration(registrationId: string, adminUserId: s
                 if (existingUser) {
                     authUser = existingUser
                 } else {
-                    console.error('Supabase Auth Error (User Exists but not found):', authError)
+                    // console.error('Supabase Auth Error (User Exists but not found)')
                     return { success: false, error: 'Gagal membuat akun: Email terdaftar tetapi data tidak ditemukan.' }
                 }
             } else {
-                console.error('Supabase Auth Error:', authError)
+                // console.error('Supabase Auth Error')
                 return { success: false, error: 'Gagal membuat akun: ' + (authError?.message || 'Unknown error') }
             }
         } else {
@@ -226,13 +226,13 @@ export async function approveRegistration(registrationId: string, adminUserId: s
             })
 
             if (resendError) {
-                console.error('Failed to send confirmation email:', resendError)
+                // console.error('Failed to send confirmation email')
             }
 
             revalidatePath('/dashboard/admin/registrations')
             return { success: true, message: 'Pendaftaran disetujui dan email konfirmasi telah dikirim' }
         } catch (e: unknown) {
-            console.error('Database Error:', e)
+            // console.error('Database Error')
             // Try to delete the auth user if DB creation failed AND it was a new user
             if (isNewUser && authUser) {
                 await supabaseAdmin.auth.admin.deleteUser(authUser.id)
@@ -240,7 +240,7 @@ export async function approveRegistration(registrationId: string, adminUserId: s
             return { success: false, error: 'Gagal membuat data: ' + (e as Error).message }
         }
     } catch (error) {
-        console.error('Approve registration error:', error)
+        // console.error('Approve registration error')
         return { success: false, error: 'Terjadi kesalahan saat menyetujui pendaftaran' }
     }
 }
@@ -260,7 +260,7 @@ export async function rejectRegistration(registrationId: string, adminUserId: st
         revalidatePath('/dashboard/admin/registrations')
         return { success: true, message: 'Pendaftaran ditolak' }
     } catch (error) {
-        console.error('Reject registration error:', error)
+        // console.error('Reject registration error')
         return { success: false, error: 'Gagal menolak pendaftaran' }
     }
 }

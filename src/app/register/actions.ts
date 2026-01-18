@@ -98,7 +98,7 @@ export async function registerStudent(prevState: any, formData: FormData) {
                 isPending: true
             }
         } catch (e: unknown) {
-            console.error('Pending Registration Error:', e)
+            // console.error('Pending Registration Error')
             return { error: 'Gagal mengirim pendaftaran: ' + (e as Error).message }
         }
     }
@@ -129,12 +129,12 @@ export async function registerStudent(prevState: any, formData: FormData) {
     authError = result.error
 
     if (authError) {
-        console.error('Supabase Auth Error')
+        // console.error('Supabase Auth Error')
         return { error: authError.message }
     }
 
     if (!authData.user) {
-        console.error('No user returned from Supabase')
+        // console.error('No user returned from Supabase')
         return { error: 'Pendaftaran gagal. Silakan coba lagi.' }
     }
 
@@ -199,7 +199,7 @@ export async function registerStudent(prevState: any, formData: FormData) {
             }
         })
     } catch (e: unknown) {
-        console.error('Registration Error')
+        // console.error('Registration Error')
         return { error: 'Gagal menyimpan data siswa: ' + (e as Error).message }
     }
 
@@ -265,7 +265,7 @@ export async function addStudentToParent(prevState: any, formData: FormData) {
             isPending: true
         }
     } catch (e: unknown) {
-        console.error('Add Student Error:', e)
+        // console.error('Add Student Error')
         return { error: 'Gagal mengirim permintaan: ' + (e as Error).message }
     }
 }

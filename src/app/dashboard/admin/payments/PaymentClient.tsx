@@ -185,13 +185,13 @@ _Pesan ini dikirim melalui Sistem Informasi TPA Nurul Iman_`
                     resolve()
                 }
                 img.onerror = () => {
-                    console.warn('Logo not loaded, continuing without logo')
+                    // console.warn('Logo not loaded, continuing without logo')
                     resolve()
                 }
                 img.src = logoUrl
             })
         } catch (error) {
-            console.warn('Error loading logo:', error)
+            // console.warn('Error loading logo:', error)
         }
 
         // --- LETTERHEAD HEADER (KOP SURAT) ---

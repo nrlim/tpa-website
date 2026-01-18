@@ -35,7 +35,7 @@ export async function deleteStudent(studentId: string) {
             const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(student.parent.userId)
 
             if (authError) {
-                console.error('Failed to delete Supabase user:', authError)
+                // console.error('Failed to delete Supabase user')
                 // We continue to delete from DB even if Auth delete fails (or maybe throw? 
                 // typically we want to clean up DB primarily)
             }
