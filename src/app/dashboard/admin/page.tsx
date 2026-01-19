@@ -6,6 +6,7 @@ import { deleteStudent } from './actions'
 import Link from 'next/link'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Prisma, StudentType } from '@prisma/client'
 
 // Calculate age from date of birth
 function calculateAge(dateOfBirth: Date): number {
@@ -24,37 +25,49 @@ function calculateAge(dateOfBirth: Date): number {
 export default async function AdminDashboard({
     searchParams,
 }: {
-    searchParams: Promise<{ page?: string; q?: string }>
+    searchParams: Promise<{ page?: string; q?: string, classId?: string, studentType?: string }>
 }) {
     const params = await searchParams;
     const page = Number(params?.page) || 1;
     const query = params?.q || '';
+    const classId = params?.classId ? Number(params.classId) : undefined;
+    const studentType = params?.studentType as StudentType | undefined;
     const pageSize = 10;
 
-    const where = query ? {
-        OR: [
-            { fullName: { contains: query, mode: 'insensitive' as const } },
-            { parent: { name: { contains: query, mode: 'insensitive' as const } } }
+    const where: Prisma.StudentWhereInput = {
+        AND: [
+            query ? {
+                OR: [
+                    { fullName: { contains: query, mode: 'insensitive' } },
+                    { parent: { name: { contains: query, mode: 'insensitive' } } }
+                ]
+            } : {},
+            classId ? { classId: classId } : {},
+            studentType ? { studentType: studentType } : {}
         ]
-    } : {};
+    };
 
-
-    const students = await prisma.student.findMany({
-        where,
-        take: pageSize,
-        skip: (page - 1) * pageSize,
-        orderBy: { createdAt: 'desc' },
-        include: {
-            parent: {
-                include: {
-                    user: true
-                }
+    const [students, classes, total, pendingCount] = await Promise.all([
+        prisma.student.findMany({
+            where,
+            take: pageSize,
+            skip: (page - 1) * pageSize,
+            orderBy: { createdAt: 'desc' },
+            include: {
+                parent: {
+                    include: {
+                        user: true
+                    }
+                },
+                class: true
             }
-        }
-    })
-
-    const total = await prisma.student.count({ where })
-    const pendingCount = await prisma.preUser.count({ where: { status: 'PENDING' } })
+        }),
+        prisma.masterClass.findMany({
+            orderBy: { name: 'asc' }
+        }),
+        prisma.student.count({ where }),
+        prisma.preUser.count({ where: { status: 'PENDING' } })
+    ]);
 
     return (
         <div className="space-y-6">
@@ -69,6 +82,9 @@ export default async function AdminDashboard({
                         )}
                         Pendaftaran Menunggu
                     </Link>
+                    <Link href="/dashboard/admin/classes" className={buttonVariants({ variant: 'outline' })}>
+                        Kelola Kelas
+                    </Link>
                     <Link href="/dashboard/admin/payments" className={buttonVariants({ variant: 'outline' })}>
                         Kelola Pembayaran
                     </Link>
@@ -81,11 +97,42 @@ export default async function AdminDashboard({
                 </div>
             </div>
 
-            {/* Search Bar */}
-            <form className="flex gap-2 max-w-md">
-                <Input name="q" placeholder="Cari nama santri atau orang tua..." defaultValue={query} className="bg-background" />
-                <Button type="submit" variant="secondary">Cari</Button>
+            {/* Search Bar & Filter */}
+            <form className="flex flex-col sm:flex-row gap-2 w-full max-w-4xl">
+                <div className="flex-1 min-w-[300px]">
+                    <Input name="q" placeholder="Cari nama santri atau orang tua..." defaultValue={query} className="bg-background w-full" />
+                </div>
+                <div className="flex gap-2 shrink-0">
+                    <select
+                        name="classId"
+                        defaultValue={classId?.toString() || ""}
+                        className="flex h-10 items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 w-[180px]"
+                    >
+                        <option value="">Semua Kelas</option>
+                        {classes.map(c => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                    </select>
+
+                    <select
+                        name="studentType"
+                        defaultValue={studentType || ""}
+                        className="flex h-10 items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 w-[150px]"
+                    >
+                        <option value="">Semua Tipe</option>
+                        <option value="INTERNAL">Internal</option>
+                        <option value="EXTERNAL">External</option>
+                    </select>
+
+                    <Button type="submit" variant="secondary">Filter</Button>
+                </div>
             </form>
+
+            <div className="flex justify-end">
+                <p className="text-sm text-muted-foreground">
+                    Total Santri: <span className="font-medium text-foreground">{total}</span>
+                </p>
+            </div>
 
             <div className="border rounded-lg overflow-hidden bg-card shadow-sm">
                 <div className="relative w-full overflow-auto">
@@ -94,8 +141,10 @@ export default async function AdminDashboard({
                             <tr>
                                 <th className="h-12 px-4 align-middle font-medium">NIS</th>
                                 <th className="h-12 px-4 align-middle font-medium">Nama Santri</th>
+                                <th className="h-12 px-4 align-middle font-medium">Kelas</th>
                                 <th className="h-12 px-4 align-middle font-medium">Orang Tua</th>
                                 <th className="h-12 px-4 align-middle font-medium">Umur</th>
+                                <th className="h-12 px-4 align-middle font-medium">Tipe</th>
                                 <th className="h-12 px-4 align-middle font-medium">Status</th>
                                 <th className="h-12 px-4 align-middle font-medium text-right">Aksi</th>
                             </tr>
@@ -111,10 +160,24 @@ export default async function AdminDashboard({
                                         )}
                                     </td>
                                     <td className="p-4 align-middle font-medium">{s.fullName}</td>
+                                    <td className="p-4 align-middle">
+                                        {s.class ? (
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                                                {s.class.name}
+                                            </span>
+                                        ) : (
+                                            <span className="text-xs text-muted-foreground">-</span>
+                                        )}
+                                    </td>
                                     <td className="p-4 align-middle">{s.parent.name}</td>
                                     <td className="p-4 align-middle">
                                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
                                             {calculateAge(s.dateOfBirth)} tahun
+                                        </span>
+                                    </td>
+                                    <td className="p-4 align-middle">
+                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${s.studentType === 'EXTERNAL' ? 'bg-orange-100 text-orange-800' : 'bg-blue-100 text-blue-800'}`}>
+                                            {s.studentType || 'INTERNAL'}
                                         </span>
                                     </td>
                                     <td className="p-4 align-middle">
@@ -125,7 +188,7 @@ export default async function AdminDashboard({
                                     <td className="p-4 align-middle text-right">
                                         <div className="flex justify-end gap-2">
                                             <ToggleStatusButton studentId={s.id} isActive={s.parent.user.isActive} />
-                                            <EditStudentModal student={s} />
+                                            <EditStudentModal student={s} classes={classes} />
                                             <DeleteButton action={deleteStudent.bind(null, s.id)} />
                                         </div>
                                     </td>
@@ -133,7 +196,7 @@ export default async function AdminDashboard({
                             ))}
                             {students.length === 0 && (
                                 <tr>
-                                    <td colSpan={6} className="p-8 text-center text-muted-foreground">Tidak ada data santri ditemukan.</td>
+                                    <td colSpan={7} className="p-8 text-center text-muted-foreground">Tidak ada data santri ditemukan.</td>
                                 </tr>
                             )}
                         </tbody>
@@ -147,7 +210,7 @@ export default async function AdminDashboard({
                     Halaman {page} dari {Math.ceil(total / pageSize) || 1}
                 </div>
                 {page > 1 ? (
-                    <Link href={`?page=${page - 1}&q=${query}`} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+                    <Link href={`?page=${page - 1}&q=${query}&classId=${classId || ''}&studentType=${studentType || ''}`} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
                         Sebelumnya
                     </Link>
                 ) : (
@@ -155,7 +218,7 @@ export default async function AdminDashboard({
                 )}
 
                 {(page * pageSize) < total ? (
-                    <Link href={`?page=${page + 1}&q=${query}`} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+                    <Link href={`?page=${page + 1}&q=${query}&classId=${classId || ''}&studentType=${studentType || ''}`} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
                         Selanjutnya
                     </Link>
                 ) : (

@@ -15,7 +15,9 @@ interface ConfirmDialogProps {
         variant: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link'
         icon?: string
     }
+    children?: React.ReactNode
 }
+
 
 export function ConfirmDialog({
     isOpen,
@@ -24,7 +26,8 @@ export function ConfirmDialog({
     title,
     description,
     isLoading,
-    confirmConfig
+    confirmConfig,
+    children
 }: ConfirmDialogProps) {
     if (!isOpen) return null
 
@@ -45,6 +48,8 @@ export function ConfirmDialog({
                 <p className="text-sm text-muted-foreground text-center mb-6">
                     {description}
                 </p>
+
+                {children && <div className="mb-6">{children}</div>}
 
                 {/* Buttons */}
                 <div className="flex gap-3">

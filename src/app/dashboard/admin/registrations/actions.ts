@@ -31,7 +31,10 @@ export async function getRegistrationStats() {
     }
 }
 
-export async function approveRegistration(registrationId: string, adminUserId: string) {
+import { PreUser, StudentType } from '@prisma/client'
+// ...
+
+export async function approveRegistration(registrationId: string, adminUserId: string, studentType: string = 'INTERNAL') {
     try {
         const registration = await prisma.preUser.findUnique({
             where: { id: registrationId }
@@ -67,6 +70,7 @@ export async function approveRegistration(registrationId: string, adminUserId: s
                         nis,
                         fullName: registration.studentFullName,
                         dateOfBirth: registration.dateOfBirth,
+                        studentType: studentType as StudentType,
                     }
                 })
 
@@ -201,6 +205,7 @@ export async function approveRegistration(registrationId: string, adminUserId: s
                         nis,
                         fullName: registration.studentFullName,
                         dateOfBirth: registration.dateOfBirth,
+                        studentType: studentType as StudentType,
                     }
                 })
 

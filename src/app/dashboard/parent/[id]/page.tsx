@@ -108,6 +108,10 @@ export default async function StudentDetailPage({
                         <p className="text-sm text-muted-foreground">Tanggal Lahir</p>
                         <p className="font-medium">{student.dateOfBirth.toLocaleDateString('id-ID', { dateStyle: 'long' })}</p>
                     </div>
+                    <div>
+                        <p className="text-sm text-muted-foreground">Tipe Santri</p>
+                        <p className="font-medium">{student.studentType || 'INTERNAL'}</p>
+                    </div>
                     <div className="md:col-span-2">
                         <p className="text-sm text-muted-foreground">Alamat</p>
                         <p className="font-medium">{parent.address}</p>

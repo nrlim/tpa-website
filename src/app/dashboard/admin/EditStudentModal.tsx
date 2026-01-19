@@ -8,17 +8,20 @@ import { updateStudent } from './actions'
 import { Pencil, X } from 'lucide-react'
 import { useFormStatus } from 'react-dom'
 import { useToast } from '@/context/ToastContext'
+import { MasterClass } from '@prisma/client'
 
-type StudentWithParent = {
+type StudentWithParentAndClass = {
     id: string
     nis?: string | null
     fullName: string
     dateOfBirth: Date
+    classId: number | null
     parent: {
         name: string
         phoneNumber: string
         address: string
     }
+    studentType?: string // It might be an enum in runtime but string is fine for prop
 }
 
 function SubmitButton() {
@@ -30,7 +33,7 @@ function SubmitButton() {
     )
 }
 
-export function EditStudentModal({ student }: { student: StudentWithParent }) {
+export function EditStudentModal({ student, classes }: { student: StudentWithParentAndClass, classes: MasterClass[] }) {
     const [isOpen, setIsOpen] = useState(false)
     const { showToast } = useToast()
 
@@ -80,6 +83,36 @@ export function EditStudentModal({ student }: { student: StudentWithParent }) {
                     <div className="space-y-2">
                         <Label htmlFor="fullName">Nama Lengkap Santri</Label>
                         <Input id="fullName" name="fullName" defaultValue={student.fullName} required />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="classId">Kelas</Label>
+                        <select
+                            id="classId"
+                            name="classId"
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            defaultValue={student.classId?.toString() || ""}
+                        >
+                            <option value="">Belum ada kelas</option>
+                            {classes.map(c => (
+                                <option key={c.id} value={c.id}>
+                                    {c.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="studentType">Tipe Santri</Label>
+                        <select
+                            id="studentType"
+                            name="studentType"
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            defaultValue={student.studentType || "INTERNAL"}
+                        >
+                            <option value="INTERNAL">Internal</option>
+                            <option value="EXTERNAL">Eksternal</option>
+                        </select>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">

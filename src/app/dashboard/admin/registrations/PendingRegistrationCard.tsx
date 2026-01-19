@@ -31,6 +31,7 @@ export function PendingRegistrationCard({ registration }: Props) {
     const [isRejecting, setIsRejecting] = useState(false)
     const [showRejectDialog, setShowRejectDialog] = useState(false)
     const [rejectReason, setRejectReason] = useState('')
+    const [studentType, setStudentType] = useState('INTERNAL')
 
     const [showApproveDialog, setShowApproveDialog] = useState(false)
 
@@ -42,7 +43,7 @@ export function PendingRegistrationCard({ registration }: Props) {
         setIsApproving(true)
         try {
             // Get current user ID - we'll need to pass this
-            const result = await approveRegistration(registration.id, 'current-admin-id')
+            const result = await approveRegistration(registration.id, 'current-admin-id', studentType)
 
             if (result.success) {
                 showToast(result.message || 'Pendaftaran disetujui', 'success')
@@ -108,7 +109,39 @@ export function PendingRegistrationCard({ registration }: Props) {
                     variant: "default"
                 }}
                 isLoading={isApproving}
-            />
+            >
+                <div className="space-y-2 text-left bg-muted/50 p-4 rounded-lg">
+                    <label className="text-sm font-medium">Pilih Tipe Santri</label>
+                    <div className="flex gap-4">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                                type="radio"
+                                name="studentType"
+                                value="INTERNAL"
+                                checked={studentType === 'INTERNAL'}
+                                onChange={(e) => setStudentType(e.target.value)}
+                                className="w-4 h-4 text-primary"
+                            />
+                            <span>Internal</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                                type="radio"
+                                name="studentType"
+                                value="EXTERNAL"
+                                checked={studentType === 'EXTERNAL'}
+                                onChange={(e) => setStudentType(e.target.value)}
+                                className="w-4 h-4 text-primary"
+                            />
+                            <span>Eksternal</span>
+                        </label>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                        Santri internal adalah santri yang terdaftar dalam program reguler.
+                        Santri eksternal biasanya hanya mengikuti program tertentu.
+                    </p>
+                </div>
+            </ConfirmDialog>
 
             <div className="bg-card border-2 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                 {/* Header */}

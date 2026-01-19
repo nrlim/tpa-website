@@ -54,11 +54,21 @@ model Student {
   fullName    String
   dateOfBirth DateTime
 
+  classId     Int?
+  class       MasterClass? @relation(fields: [classId], references: [id])
+
   scores   Score[]
   payments Payment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  studentType StudentType @default(INTERNAL)
+}
+
+enum StudentType {
+  INTERNAL
+  EXTERNAL
 }
 
 model Teacher {
@@ -144,4 +154,14 @@ model PreUser {
 
   @@index([status])
   @@index([email])
+}
+
+model MasterClass {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  description String?
+  students    Student[]
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }

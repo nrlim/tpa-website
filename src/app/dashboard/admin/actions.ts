@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import { StudentType } from '@prisma/client'
 
 export async function deleteStudent(studentId: string) {
     try {
@@ -60,6 +61,8 @@ const updateSchema = z.object({
     dateOfBirth: z.string(),
     phoneNumber: z.string(),
     address: z.string(),
+    classId: z.string().optional(),
+    studentType: z.string(),
 })
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -72,7 +75,7 @@ export async function updateStudent(prevState: any, formData: FormData) {
             return { error: 'Invalid data' }
         }
 
-        const { id, fullName, parentName, dateOfBirth, phoneNumber, address } = parsed.data
+        const { id, fullName, parentName, dateOfBirth, phoneNumber, address, classId, studentType } = parsed.data
 
         // Get student with parent
         const student = await prisma.student.findUnique({
@@ -89,7 +92,9 @@ export async function updateStudent(prevState: any, formData: FormData) {
             where: { id },
             data: {
                 fullName,
-                dateOfBirth: new Date(dateOfBirth)
+                dateOfBirth: new Date(dateOfBirth),
+                classId: classId ? parseInt(classId) : null,
+                studentType: studentType as StudentType
             }
         })
 
@@ -106,6 +111,7 @@ export async function updateStudent(prevState: any, formData: FormData) {
         revalidatePath('/dashboard/admin')
         return { success: true, message: 'Data santri berhasil diperbarui' }
     } catch (error: unknown) {
+        // console.error('Error updating student:', error)
         return { error: (error as Error).message }
     }
 }
