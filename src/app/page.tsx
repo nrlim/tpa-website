@@ -123,7 +123,7 @@ export default function Home() {
                     </div>
                     <div>
                       <h3 className="font-bold text-xl mb-2">Kurikulum Terpadu</h3>
-                      <p className="text-muted-foreground">Pembelajaran Al-Qur'an (Iqro & Tilawati) dipadukan dengan hafalan, dinul islam, dan pendidikan karakter.</p>
+                      <p className="text-muted-foreground">Pembelajaran Al-Qur'an (Iqro Utsmani) dipadukan dengan hafalan, dinul islam, dan pendidikan karakter.</p>
                     </div>
                   </div>
 
@@ -187,12 +187,12 @@ export default function Home() {
                 </div>
                 <h3 className="text-2xl font-bold mb-4 text-primary">Baca Al-Qur'an</h3>
                 <p className="text-muted-foreground mb-6 leading-relaxed">
-                  Pembelajaran membaca Al-Qur'an dengan metode Iqro dan Tilawati yang mudah dipahami dan efektif untuk semua usia.
+                  Pembelajaran membaca Al-Qur'an dengan metode Iqro Utsmani yang mudah dipahami dan efektif untuk semua usia.
                 </p>
                 <ul className="space-y-3">
                   <li className="flex items-start gap-2">
                     <CheckCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                    <span className="text-sm">Metode Iqro & Tilawati</span>
+                    <span className="text-sm">Metode Iqro Utsmani</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" />

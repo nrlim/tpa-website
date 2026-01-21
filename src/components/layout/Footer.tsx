@@ -45,10 +45,6 @@ export function Footer() {
                                 <span>Majelis Nurul Iman, Baltic Area, Kab Bekasi</span>
                             </p>
                             <p className="flex items-center gap-3">
-                                <span className="text-white font-semibold min-w-[60px]">Phone:</span>
-                                <span>+62 xxx-xxx-xxx</span>
-                            </p>
-                            <p className="flex items-center gap-3">
                                 <span className="text-white font-semibold min-w-[60px]">Email:</span>
                                 <span>tpanurulimanbaltic@gmail.com</span>
                             </p>
