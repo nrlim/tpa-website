@@ -20,6 +20,7 @@ interface StudentPayment {
     status: string // "PAID" | "UNPAID"
     paymentId?: string
     phoneNumber: string
+    transferProofUrl?: string | null
 }
 
 interface PaymentClientProps {
@@ -504,6 +505,7 @@ _Pesan ini dikirim melalui Sistem Informasi TPA Nurul Iman_`
                                     Status <SortIcon column="status" />
                                 </div>
                             </th>
+                            <th className="p-4 font-medium">Proof</th>
                             <th className="p-4 font-medium text-right">Action</th>
                         </tr>
                     </thead>
@@ -529,6 +531,18 @@ _Pesan ini dikirim melalui Sistem Informasi TPA Nurul Iman_`
                                         className={student.status === 'PAID' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}>
                                         {student.status}
                                     </Badge>
+                                </td>
+                                <td className="p-4">
+                                    {student.transferProofUrl && (
+                                        <a
+                                            href={student.transferProofUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline border border-blue-200 bg-blue-50 px-2 py-1 rounded"
+                                        >
+                                            View Proof
+                                        </a>
+                                    )}
                                 </td>
                                 <td className="p-4 text-right">
                                     <div className="flex justify-end gap-2">

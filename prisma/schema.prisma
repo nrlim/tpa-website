@@ -116,6 +116,7 @@ model Payment {
 
   status String    @default("UNPAID")
   paidAt DateTime?
+  transferProofUrl String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

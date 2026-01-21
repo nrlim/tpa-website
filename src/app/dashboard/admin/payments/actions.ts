@@ -2,6 +2,8 @@
 
 import prisma from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
+import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 export async function getStudentsWithPaymentStatus(
     month: number,
@@ -31,7 +33,8 @@ export async function getStudentsWithPaymentStatus(
             nis: student.nis,
             status: student.payments[0]?.status || 'UNPAID',
             paymentId: student.payments[0]?.id,
-            phoneNumber: student.parent.phoneNumber
+            phoneNumber: student.parent.phoneNumber,
+            transferProofUrl: student.payments[0]?.transferProofUrl
         }))
 
         return mappedStudents.sort((a, b) => {
@@ -59,8 +62,49 @@ export async function getStudentsWithPaymentStatus(
     }
 }
 
+async function deleteProofFile(studentId: string, month: number, year: number) {
+    try {
+        const payment = await prisma.payment.findUnique({
+            where: {
+                studentId_month_year: {
+                    studentId,
+                    month,
+                    year
+                }
+            }
+        })
+
+        if (payment?.transferProofUrl) {
+            // Extract filename from URL
+            const bucketPart = '/tpa-bucket/'
+            const url = payment.transferProofUrl
+            const index = url.indexOf(bucketPart)
+
+            if (index !== -1) {
+                const filename = url.substring(index + bucketPart.length)
+
+                // Use Admin Client to delete file (Bypassing RLS)
+                const adminSupabase = createAdminClient()
+                const { error } = await adminSupabase.storage
+                    .from('tpa-bucket')
+                    .remove([filename])
+
+                if (error) {
+                    console.error("Error deleting from Supabase:", error)
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Error processing delete proof:", error)
+    }
+}
+
 export async function markPayment(studentId: string, month: number, year: number, status: string) {
     try {
+        if (status === 'PAID') {
+            await deleteProofFile(studentId, month, year)
+        }
+
         await prisma.payment.upsert({
             where: {
                 studentId_month_year: {
@@ -74,11 +118,13 @@ export async function markPayment(studentId: string, month: number, year: number
                 month,
                 year,
                 status,
-                paidAt: status === 'PAID' ? new Date() : null
+                paidAt: status === 'PAID' ? new Date() : null,
+                transferProofUrl: null // No proof needed if paid manually or cleared
             },
             update: {
                 status,
-                paidAt: status === 'PAID' ? new Date() : null
+                paidAt: status === 'PAID' ? new Date() : null,
+                transferProofUrl: status === 'PAID' ? null : undefined
             }
         })
 
@@ -93,6 +139,10 @@ export async function markPayment(studentId: string, month: number, year: number
 
 export async function markBulkPayment(studentIds: string[], month: number, year: number, status: string) {
     try {
+        if (status === 'PAID') {
+            await Promise.all(studentIds.map(id => deleteProofFile(id, month, year)))
+        }
+
         // Use a transaction or Promise.all. Promise.all is sufficient here.
         await prisma.$transaction(
             studentIds.map(studentId =>
@@ -109,11 +159,13 @@ export async function markBulkPayment(studentIds: string[], month: number, year:
                         month,
                         year,
                         status,
-                        paidAt: status === 'PAID' ? new Date() : null
+                        paidAt: status === 'PAID' ? new Date() : null,
+                        transferProofUrl: null
                     },
                     update: {
                         status,
-                        paidAt: status === 'PAID' ? new Date() : null
+                        paidAt: status === 'PAID' ? new Date() : null,
+                        transferProofUrl: status === 'PAID' ? null : undefined
                     }
                 })
             )

@@ -61,15 +61,18 @@ export default async function StudentDetailPage({
 
             {/* Payment Alert */}
             {!isPaidThisMonth ? (
-                <div className="bg-destructive/10 border border-destructive/20 text-destructive rounded-xl p-4 flex items-start sm:items-center gap-4 shadow-sm animate-in fade-in slide-in-from-top-4">
-                    <div className="p-2 bg-destructive/10 rounded-full">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-alert-circle"><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line x1="12" x2="12.01" y1="16" y2="16" /></svg>
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-lg">Pembayaran Bulan Ini Belum Lunas</h3>
-                        <p className="text-sm opacity-90">
-                            Tagihan SPP untuk bulan <span className="font-semibold">{now.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}</span> belum terbayarkan. Mohon segera lakukan pembayaran.
-                        </p>
+                <div className="bg-white border text-card-foreground rounded-xl shadow-sm overflow-hidden">
+                    <div className="bg-destructive/5 border-b border-destructive/10 p-4 flex items-start sm:items-center gap-4">
+                        <div className="p-2 bg-destructive/10 rounded-full shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-alert-circle text-destructive"><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line x1="12" x2="12.01" y1="16" y2="16" /></svg>
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-lg text-destructive">Pembayaran Bulan Ini Belum Lunas</h3>
+                            <p className="text-sm text-muted-foreground">
+                                Tagihan SPP untuk bulan <span className="font-semibold text-foreground">{now.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}</span> belum terbayarkan.
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">Silakan lakukan pembayaran dan upload bukti transfer melalui halaman Dashboard Utama.</p>
+                        </div>
                     </div>
                 </div>
             ) : (
@@ -182,6 +185,7 @@ export default async function StudentDetailPage({
                                         <th className="p-4 font-medium whitespace-nowrap">Periode</th>
                                         <th className="p-4 font-medium whitespace-nowrap">Status</th>
                                         <th className="p-4 font-medium whitespace-nowrap">Tanggal Bayar</th>
+                                        <th className="p-4 font-medium whitespace-nowrap">Bukti</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -199,6 +203,20 @@ export default async function StudentDetailPage({
                                             </td>
                                             <td className="p-4 text-muted-foreground whitespace-nowrap">
                                                 {payment.paidAt ? payment.paidAt.toLocaleDateString('id-ID', { dateStyle: 'medium' }) : '-'}
+                                            </td>
+                                            <td className="p-4 whitespace-nowrap">
+                                                {payment.status === 'PAID' ? (
+                                                    <div className="flex items-center gap-1.5 text-green-600 font-medium text-xs">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="m9 12 2 2 4-4" /></svg>
+                                                        Bukti Valid
+                                                    </div>
+                                                ) : payment.transferProofUrl ? (
+                                                    <a href={payment.transferProofUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline text-xs">
+                                                        Lihat Bukti
+                                                    </a>
+                                                ) : (
+                                                    <span className="text-muted-foreground text-xs">-</span>
+                                                )}
                                             </td>
                                         </tr>
                                     ))}

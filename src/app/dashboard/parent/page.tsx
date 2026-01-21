@@ -7,6 +7,7 @@ import { getStudentPayments } from "@/app/dashboard/admin/payments/actions"
 import Link from 'next/link'
 import { buttonVariants } from '@/components/ui/button'
 import { ArrowRight, GraduationCap, Wallet } from 'lucide-react'
+import { TransferProofUpload } from '@/components/TransferProofUpload'
 
 export default async function StudentDashboard() {
     const supabase = await createClient()
@@ -83,7 +84,7 @@ export default async function StudentDashboard() {
                         className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors w-fit"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M8 12h8" /><path d="M12 8v8" /></svg>
-                        Tambah Santri
+                        Daftarkan Santri
                     </Link>
                 </div>
             </div>
@@ -170,12 +171,14 @@ export default async function StudentDashboard() {
                 <div className="space-y-6">
                     <h2 className="text-2xl font-bold">Daftar Santri</h2>
                     <div className="grid gap-6">
-                        {studentsWithPayments.map((student) => (
+                        {studentsWithPayments.sort((a, b) => (a.isPaidThisMonth === b.isPaidThisMonth) ? 0 : a.isPaidThisMonth ? 1 : -1).map((student) => (
                             <StudentCard
                                 key={student.id}
                                 student={student}
                                 isPaidThisMonth={student.isPaidThisMonth}
                                 now={now}
+                                currentMonth={currentMonth}
+                                currentYear={currentYear}
                             />
                         ))}
                     </div>
@@ -186,12 +189,15 @@ export default async function StudentDashboard() {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function StudentCard({ student, isPaidThisMonth, now }: { student: any; isPaidThisMonth: boolean; now: Date }) {
+function StudentCard({ student, isPaidThisMonth, now, currentMonth, currentYear }: { student: any; isPaidThisMonth: boolean; now: Date; currentMonth: number; currentYear: number }) {
     // Find last payment
     const sortedPayments = [...(student.payments || [])].sort((a: any, b: any) =>
         new Date(b.date || b.createdAt).getTime() - new Date(a.date || a.createdAt).getTime()
     )
     const lastPayment = sortedPayments[0]
+
+    // Find current month payment to get existing proof URL
+    const currentPayment = student.payments.find((p: any) => p.month === currentMonth && p.year === currentYear)
 
     return (
         <div className="bg-card border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
@@ -251,6 +257,24 @@ function StudentCard({ student, isPaidThisMonth, now }: { student: any; isPaidTh
                     </div>
                 </div>
             </div>
+
+            {/* Upload Section for Unpaid */}
+            {!isPaidThisMonth && (
+                <div className="px-4 pb-4">
+                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                        <div className="mb-2">
+                            <p className="text-sm font-medium text-slate-700">Upload Bukti Transfer</p>
+                            <p className="text-xs text-slate-500">BSI 1234567890 a.n TPA Nurul Iman</p>
+                        </div>
+                        <TransferProofUpload
+                            studentId={student.id}
+                            month={currentMonth}
+                            year={currentYear}
+                            existingProofUrl={currentPayment?.transferProofUrl}
+                        />
+                    </div>
+                </div>
+            )}
 
             {/* Footer Action */}
             <div className="p-4 bg-muted/5 border-t">

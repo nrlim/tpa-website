@@ -478,7 +478,7 @@ export default function Home() {
                   <Users className="w-6 h-6 text-secondary" />
                   Kontak
                 </h3>
-                <p className="text-white/80">WhatsApp: +62 xxx-xxx-xxx</p>
+                {/* <p className="text-white/80">WhatsApp: +62 xxx-xxx-xxx</p> */}
                 <p className="text-white/80">Email: tpanurulimanbaltic@gmail.com</p>
               </div>
 
@@ -487,7 +487,7 @@ export default function Home() {
                   <Heart className="w-6 h-6 text-secondary" />
                   Lokasi
                 </h3>
-                <p className="text-white/80">Masjid Nurul Iman</p>
+                <p className="text-white/80">Majelis Nurul Iman</p>
                 <p className="text-white/80">Baltic Area, Kab Bekasi</p>
               </div>
             </div>
