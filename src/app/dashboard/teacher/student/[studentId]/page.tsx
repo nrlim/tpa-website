@@ -2,6 +2,7 @@ import prisma from '@/lib/prisma'
 import { ScoreForm } from './ScoreForm'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { ReportGenerator } from '@/components/ReportGenerator'
 
 export default async function StudentGradePage({ params }: { params: Promise<{ studentId: string }> }) {
     const { studentId } = await params
@@ -9,6 +10,7 @@ export default async function StudentGradePage({ params }: { params: Promise<{ s
         where: { id: studentId },
         include: {
             parent: true,
+            class: true,
             scores: {
                 orderBy: { createdAt: 'desc' },
                 include: { teacher: true }
@@ -20,11 +22,14 @@ export default async function StudentGradePage({ params }: { params: Promise<{ s
 
     return (
         <div className="space-y-8 container mx-auto">
-            <div className="flex items-center gap-4">
-                <Link href="/dashboard/teacher">
-                    <Button variant="outline" size="sm">Kembali</Button>
-                </Link>
-                <h1 className="text-2xl font-bold">Penilaian: {student.fullName}</h1>
+            <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                    <Link href="/dashboard/teacher">
+                        <Button variant="outline" size="sm">Kembali</Button>
+                    </Link>
+                    <h1 className="text-2xl font-bold">Penilaian: {student.fullName}</h1>
+                </div>
+                <ReportGenerator student={student} />
             </div>
 
             <div className="grid lg:grid-cols-3 gap-8">
