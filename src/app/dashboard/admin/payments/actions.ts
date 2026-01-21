@@ -9,7 +9,8 @@ export async function getStudentsWithPaymentStatus(
     month: number,
     year: number,
     sortBy: string = 'name',
-    sortOrder: 'asc' | 'desc' = 'asc'
+    sortOrder: 'asc' | 'desc' = 'asc',
+    filterStatus?: string
 ) {
     try {
         const students = await prisma.student.findMany({
@@ -27,7 +28,7 @@ export async function getStudentsWithPaymentStatus(
             }
         })
 
-        const mappedStudents = students.map(student => ({
+        let mappedStudents = students.map(student => ({
             id: student.id,
             fullName: student.fullName,
             nis: student.nis,
@@ -36,6 +37,11 @@ export async function getStudentsWithPaymentStatus(
             phoneNumber: student.parent.phoneNumber,
             transferProofUrl: student.payments[0]?.transferProofUrl
         }))
+
+        // Filter by status if provided
+        if (filterStatus && filterStatus !== 'ALL') {
+            mappedStudents = mappedStudents.filter(s => s.status === filterStatus)
+        }
 
         return mappedStudents.sort((a, b) => {
             let valA = ''
@@ -90,12 +96,12 @@ async function deleteProofFile(studentId: string, month: number, year: number) {
                     .remove([filename])
 
                 if (error) {
-                    console.error("Error deleting from Supabase:", error)
+                    // console.error("Error deleting from Supabase:", error)
                 }
             }
         }
     } catch (error) {
-        console.error("Error processing delete proof:", error)
+        // console.error("Error processing delete proof:", error)
     }
 }
 

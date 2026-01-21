@@ -47,11 +47,11 @@ export async function uploadTransferProof(formData: FormData) {
                         .remove([oldFilename])
 
                     if (deleteError) {
-                        console.error("Failed to delete old proof:", deleteError)
+                        // console.error("Failed to delete old proof:", deleteError)
                     }
                 }
             } catch (err) {
-                console.error("Error attempting to delete old proof:", err)
+                // console.error("Error attempting to delete old proof:", err)
             }
         }
 
@@ -69,7 +69,7 @@ export async function uploadTransferProof(formData: FormData) {
             })
 
         if (uploadError) {
-            console.error("Supabase upload error:", uploadError)
+            // console.error("Supabase upload error:", uploadError)
             return { success: false, error: "Failed to upload to storage" }
         }
 
@@ -104,7 +104,7 @@ export async function uploadTransferProof(formData: FormData) {
 
         return { success: true }
     } catch (error) {
-        console.error("Upload error:", error)
+        // console.error("Upload error:", error)
         return { success: false, error: "Failed to upload proof" }
     }
 }

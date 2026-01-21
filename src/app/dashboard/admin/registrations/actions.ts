@@ -20,14 +20,15 @@ export async function getPendingRegistrations() {
 
 export async function getRegistrationStats() {
     try {
-        const [total, pending] = await Promise.all([
-            prisma.preUser.count(),
+        const [approved, rejected, pending] = await Promise.all([
+            prisma.preUser.count({ where: { status: 'APPROVED' } }),
+            prisma.preUser.count({ where: { status: 'REJECTED' } }),
             prisma.preUser.count({ where: { status: 'PENDING' } })
         ])
-        return { total, pending }
+        return { approved, rejected, pending, total: approved + rejected + pending }
     } catch (error) {
         // console.error('Error fetching registration stats')
-        return { total: 0, pending: 0 }
+        return { approved: 0, rejected: 0, pending: 0, total: 0 }
     }
 }
 

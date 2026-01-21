@@ -77,7 +77,7 @@ export function TransferProofUpload({ studentId, month, year, existingProofUrl }
                     })
             },
             error(err) {
-                console.error(err.message)
+                // console.error(err.message)
                 setIsUploading(false)
                 Swal.fire({
                     icon: 'error',

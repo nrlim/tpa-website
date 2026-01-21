@@ -56,7 +56,7 @@ export function PendingRegistrationCard({ registration }: Props) {
             }
         } catch (error) {
             showToast('Terjadi kesalahan saat menyetujui pendaftaran', 'error')
-            console.error(error)
+            // console.error(error)
         } finally {
             setIsApproving(false)
             setShowApproveDialog(false)
@@ -83,7 +83,7 @@ export function PendingRegistrationCard({ registration }: Props) {
             }
         } catch (error) {
             showToast('Terjadi kesalahan saat menolak pendaftaran', 'error')
-            console.error(error)
+            // console.error(error)
         } finally {
             setIsRejecting(false)
             setShowRejectDialog(false)

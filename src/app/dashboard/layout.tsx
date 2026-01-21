@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { signOut } from '@/app/auth/actions'
 import prisma from '@/lib/prisma'
+import { DashboardMobileMenu } from '@/components/layout/DashboardMobileMenu'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
     const supabase = await createClient()
@@ -65,6 +66,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <div className="min-h-screen flex flex-col">
             <header className="border-b bg-background sticky top-0 z-10 px-6 h-16 flex items-center justify-between shadow-sm">
                 <div className="flex items-center gap-3">
+                    <DashboardMobileMenu role={dbUser?.role?.name} />
                     <Link href={dashboardLink} className="flex items-center gap-3">
                         <Image
                             src="/logo.png"

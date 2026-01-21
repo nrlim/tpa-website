@@ -3,7 +3,7 @@ import prisma from '@/lib/prisma'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
-import { StudentType } from '@prisma/client'
+import { StudentType, Prisma } from '@prisma/client'
 
 export async function deleteStudent(studentId: string) {
     try {
@@ -116,6 +116,7 @@ export async function updateStudent(prevState: any, formData: FormData) {
     }
 }
 
+
 export async function toggleUserStatus(studentId: string, isActive: boolean) {
     try {
         const student = await prisma.student.findUnique({
@@ -136,3 +137,35 @@ export async function toggleUserStatus(studentId: string, isActive: boolean) {
         return { error: (error as Error).message }
     }
 }
+
+export async function getAllStudentsForReport(filters: { q?: string; classId?: string; studentType?: string }) {
+    const { q, classId, studentType } = filters;
+    const where: Prisma.StudentWhereInput = {
+        AND: [
+            q ? {
+                OR: [
+                    { fullName: { contains: q, mode: 'insensitive' } },
+                    { parent: { name: { contains: q, mode: 'insensitive' } } }
+                ]
+            } : {},
+            classId ? { classId: Number(classId) } : {},
+            studentType ? { studentType: studentType as StudentType } : {}
+        ]
+    };
+
+    const students = await prisma.student.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        include: {
+            parent: {
+                include: {
+                    user: true
+                }
+            },
+            class: true
+        }
+    });
+
+    return students;
+}
+

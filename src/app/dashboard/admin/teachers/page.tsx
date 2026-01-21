@@ -2,7 +2,7 @@ import prisma from '@/lib/prisma'
 import Link from 'next/link'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Plus } from 'lucide-react'
+import { Plus, ChevronLeft } from 'lucide-react'
 import { deleteTeacher } from './actions'
 import { DeleteButton } from '../DeleteButton'
 
@@ -23,8 +23,13 @@ export default async function TeachersPage({
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <h1 className="text-3xl font-bold tracking-tight">Data Pengajar (Ustadz/Ustadzah)</h1>
+            <div className="flex items-center gap-4">
+                <Link href="/dashboard/admin" className={buttonVariants({ variant: 'ghost', size: 'icon' })}>
+                    <ChevronLeft className="h-4 w-4" />
+                </Link>
+                <div className="flex-1">
+                    <h1 className="text-3xl font-bold tracking-tight">Data Pengajar (Ustadz/Ustadzah)</h1>
+                </div>
                 <Link href="/dashboard/admin/teachers/new" className={buttonVariants()}>
                     <Plus className="mr-2 h-4 w-4" /> Tambah Pengajar
                 </Link>

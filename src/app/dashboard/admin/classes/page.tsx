@@ -30,38 +30,40 @@ export default async function ClassesPage() {
             </div>
 
             <div className="border rounded-lg overflow-hidden bg-card shadow-sm">
-                <table className="w-full text-sm text-left caption-bottom">
-                    <thead className="bg-muted/50 text-muted-foreground border-b">
-                        <tr>
-                            <th className="h-12 px-4 align-middle font-medium">Nama Kelas</th>
-                            <th className="h-12 px-4 align-middle font-medium">Deskripsi</th>
-                            <th className="h-12 px-4 align-middle font-medium">Jumlah Santri</th>
-                            <th className="h-12 px-4 align-middle font-medium text-right">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {classes.length === 0 ? (
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left caption-bottom">
+                        <thead className="bg-muted/50 text-muted-foreground border-b">
                             <tr>
-                                <td colSpan={4} className="p-8 text-center text-muted-foreground">Belum ada data kelas.</td>
+                                <th className="h-12 px-4 align-middle font-medium">Nama Kelas</th>
+                                <th className="h-12 px-4 align-middle font-medium">Deskripsi</th>
+                                <th className="h-12 px-4 align-middle font-medium">Jumlah Santri</th>
+                                <th className="h-12 px-4 align-middle font-medium text-right">Aksi</th>
                             </tr>
-                        ) : (
-                            classes.map((c) => (
-                                <tr key={c.id} className="border-b transition-colors hover:bg-muted/50">
-                                    <td className="p-4 align-middle font-medium">{c.name}</td>
-                                    <td className="p-4 align-middle text-muted-foreground">{c.description || '-'}</td>
-                                    <td className="p-4 align-middle">
-                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                            {c._count.students} Santri
-                                        </span>
-                                    </td>
-                                    <td className="p-4 align-middle text-right">
-                                        <DeleteButton action={deleteClass.bind(null, c.id)} />
-                                    </td>
+                        </thead>
+                        <tbody>
+                            {classes.length === 0 ? (
+                                <tr>
+                                    <td colSpan={4} className="p-8 text-center text-muted-foreground">Belum ada data kelas.</td>
                                 </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+                            ) : (
+                                classes.map((c) => (
+                                    <tr key={c.id} className="border-b transition-colors hover:bg-muted/50">
+                                        <td className="p-4 align-middle font-medium">{c.name}</td>
+                                        <td className="p-4 align-middle text-muted-foreground">{c.description || '-'}</td>
+                                        <td className="p-4 align-middle">
+                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                {c._count.students} Santri
+                                            </span>
+                                        </td>
+                                        <td className="p-4 align-middle text-right">
+                                            <DeleteButton action={deleteClass.bind(null, c.id)} />
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     )

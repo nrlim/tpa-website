@@ -1,7 +1,9 @@
 import { getPendingRegistrations, getRegistrationStats } from './actions'
 import { PendingRegistrationCard } from './PendingRegistrationCard'
 import { Badge } from '@/components/ui/badge'
-import { Clock, CheckCircle, XCircle } from 'lucide-react'
+import Link from "next/link"
+import { buttonVariants } from "@/components/ui/button"
+import { ChevronLeft, Clock, CheckCircle, XCircle } from 'lucide-react'
 
 export default async function RegistrationsPage() {
     const [pendingRegistrations, statsData] = await Promise.all([
@@ -11,17 +13,23 @@ export default async function RegistrationsPage() {
 
     const stats = {
         pending: statsData.pending,
-        total: statsData.total
+        approved: statsData.approved,
+        rejected: statsData.rejected
     }
 
     return (
         <div className="space-y-8">
             {/* Header */}
-            <div>
-                <h1 className="text-3xl font-bold">Pendaftaran Menunggu Persetujuan</h1>
-                <p className="text-muted-foreground mt-2">
-                    Kelola pendaftaran santri baru dan permintaan penambahan santri
-                </p>
+            <div className="flex items-center gap-4">
+                <Link href="/dashboard/admin" className={buttonVariants({ variant: 'ghost', size: 'icon' })}>
+                    <ChevronLeft className="h-4 w-4" />
+                </Link>
+                <div className="flex-1">
+                    <h1 className="text-3xl font-bold">Pendaftaran Menunggu Persetujuan</h1>
+                    <p className="text-muted-foreground mt-2">
+                        Kelola pendaftaran santri baru dan permintaan penambahan santri
+                    </p>
+                </div>
             </div>
 
             {/* Stats */}
@@ -44,20 +52,20 @@ export default async function RegistrationsPage() {
                             <CheckCircle className="w-6 h-6 text-green-600" />
                         </div>
                         <div>
-                            <p className="text-sm text-green-600 font-medium">Total Pendaftaran</p>
-                            <p className="text-3xl font-bold text-green-700">{stats.total}</p>
+                            <p className="text-sm text-green-600 font-medium">Disetujui</p>
+                            <p className="text-3xl font-bold text-green-700">{stats.approved}</p>
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-card border-2 rounded-xl p-6">
+                <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6">
                     <div className="flex items-center gap-3">
-                        <div className="p-3 bg-muted rounded-lg">
-                            <XCircle className="w-6 h-6 text-muted-foreground" />
+                        <div className="p-3 bg-red-100 rounded-lg">
+                            <XCircle className="w-6 h-6 text-red-600" />
                         </div>
                         <div>
-                            <p className="text-sm text-muted-foreground font-medium">Perlu Perhatian</p>
-                            <p className="text-3xl font-bold">{stats.pending}</p>
+                            <p className="text-sm text-red-600 font-medium">Ditolak</p>
+                            <p className="text-3xl font-bold text-red-700">{stats.rejected}</p>
                         </div>
                     </div>
                 </div>

@@ -293,7 +293,7 @@ export function ReportGenerator({ student }: ReportGeneratorProps) {
             doc.save(fileName)
             setOpen(false)
         } catch (error) {
-            console.error('Failed to generate PDF:', error)
+            // console.error('Failed to generate PDF:', error)
             alert('Gagal membuat PDF. Silakan coba lagi.')
         } finally {
             setLoading(false)
@@ -341,7 +341,7 @@ export function ReportGenerator({ student }: ReportGeneratorProps) {
 
             setOpen(false)
         } catch (error) {
-            console.error('Failed to print PDF:', error)
+            // console.error('Failed to print PDF:', error)
             alert('Gagal mencetak PDF. Silakan coba lagi.')
         } finally {
             setLoading(false)
