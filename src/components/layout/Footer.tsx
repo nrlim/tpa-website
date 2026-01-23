@@ -52,8 +52,19 @@ export function Footer() {
                     </div>
                 </div>
 
-                <div className="border-t border-slate-800 pt-8 text-center text-slate-500 text-sm">
+                <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center text-slate-500 text-sm gap-4">
                     <p>&copy; {new Date().getFullYear()} TPA Nurul Iman Baltic. All rights reserved.</p>
+                    <p>
+                        Developed by{" "}
+                        <a
+                            href="https://nuralim.dev/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-slate-400 hover:text-white transition-colors"
+                        >
+                            Nuralim
+                        </a>
+                    </p>
                 </div>
             </div>
         </footer>
