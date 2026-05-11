@@ -29,47 +29,82 @@ interface PreviewEntry {
 // The student name will be placed in the center of the certificate
 // Based on the template's visual center for the recipient name
 const NAME_X = 420.945 // center of 841.89
-const NAME_Y = 355     // approximate Y position for recipient name
+const NAME_Y = 350     // approximate Y position for recipient name (shifted up)
 
 // ─── Canvas helper: render one certificate to a data URL ────────────────────
 async function renderCertificate(
     svgContent: string,
     recipientName: string,
-    canvas: HTMLCanvasElement
+    canvas: HTMLCanvasElement,
+    resolution: 'low' | 'medium' | 'high'
 ): Promise<string> {
     return new Promise((resolve, reject) => {
+        let fontSize = 55
+        const len = recipientName.length
+
+        // Skala ukuran font secara dinamis agar tetap muat di 1 baris
+        if (len > 40) {
+            fontSize = 32
+        } else if (len > 30) {
+            fontSize = 38
+        } else if (len > 22) {
+            fontSize = 44
+        } else if (len > 15) {
+            fontSize = 50
+        }
+
+        const nameSvg = `<tspan x="0" y="0">${escapeXml(recipientName)}</tspan>`
+
         const nameText = `
       <text
         text-anchor="middle"
         dominant-baseline="middle"
         transform="translate(${NAME_X} ${NAME_Y})"
-        style="font-family: 'January Night', serif; font-size: 50px; font-weight: normal; fill: #3a2208; letter-spacing: 1px;"
+        style="font-family: 'January Night', serif; font-size: ${fontSize}px; font-weight: normal; fill: #3a2208; letter-spacing: 1px;"
       >
-        <tspan x="0" y="0">${escapeXml(recipientName)}</tspan>
+        ${nameSvg}
       </text>
     `
 
+        let resWidth = 1754
+        let resHeight = 1240
+
+        if (resolution === 'high') {
+            resWidth = 3508
+            resHeight = 2480
+        } else if (resolution === 'low') {
+            resWidth = 1122 // ~96 PPI, ideal untuk preview/web/WA
+            resHeight = 794
+        }
+
+        // Sisipkan width dan height sesuai resolusi langsung ke tag <svg>
+        let modifiedSvg = svgContent.replace(
+            /<svg([^>]*)>/i,
+            `<svg$1 width="${resWidth}" height="${resHeight}">`
+        )
+
         // Find insertion point: before </g> that closes the st4 group (just before the text elements start)
-        const insertionPoint = svgContent.lastIndexOf('</g>')
-        const modifiedSvg =
-            svgContent.slice(0, insertionPoint) +
+        const insertionPoint = modifiedSvg.lastIndexOf('</g>')
+        modifiedSvg =
+            modifiedSvg.slice(0, insertionPoint) +
             nameText +
-            svgContent.slice(insertionPoint)
+            modifiedSvg.slice(insertionPoint)
 
         const blob = new Blob([modifiedSvg], { type: 'image/svg+xml;charset=utf-8' })
         const url = URL.createObjectURL(blob)
 
         const img = new Image()
         img.onload = () => {
-            canvas.width = 1122  // 841.89 * 1.333 ≈ A4 landscape 96dpi→px at ~1x
-            canvas.height = 794
+            canvas.width = resWidth
+            canvas.height = resHeight
 
             const ctx = canvas.getContext('2d')!
             ctx.clearRect(0, 0, canvas.width, canvas.height)
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
 
             URL.revokeObjectURL(url)
-            resolve(canvas.toDataURL('image/png', 0.95))
+            // Quality 1.0 (maksimal)
+            resolve(canvas.toDataURL('image/png', 1.0))
         }
         img.onerror = (e) => {
             URL.revokeObjectURL(url)
@@ -113,6 +148,7 @@ export function CertificateGenerator() {
     const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null)
     const [isPreviewing, setIsPreviewing] = useState(false)
     const [format, setFormat] = useState<'pdf' | 'png'>('pdf')
+    const [resolution, setResolution] = useState<'low' | 'medium' | 'high'>('medium')
 
     const fileInputRef = useRef<HTMLInputElement>(null)
     const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -136,7 +172,7 @@ export function CertificateGenerator() {
                     binary += String.fromCharCode(bytes[i])
                 }
                 const base64Font = btoa(binary)
-                
+
                 const fontStyle = `
                 <style>
                     @font-face {
@@ -144,7 +180,7 @@ export function CertificateGenerator() {
                         src: url('data:font/ttf;base64,${base64Font}') format('truetype');
                     }
                 </style>`
-                
+
                 text = text.replace(/<svg[^>]*>/, (match) => match + fontStyle)
             }
         } catch (e) {
@@ -228,7 +264,7 @@ export function CertificateGenerator() {
         try {
             const svg = await loadSvgTemplate()
             const canvas = canvasRef.current!
-            const dataUrl = await renderCertificate(svg, name, canvas)
+            const dataUrl = await renderCertificate(svg, name, canvas, resolution)
             setPreviewDataUrl(dataUrl)
         } catch (err: any) {
             setCsvError(err.message)
@@ -260,9 +296,9 @@ export function CertificateGenerator() {
                 setProgress(Math.round((i / names.length) * 100))
 
                 try {
-                    const dataUrl = await renderCertificate(svg, name, canvas)
+                    const dataUrl = await renderCertificate(svg, name, canvas, resolution)
                     const safeName = name.replace(/[^a-zA-Z0-9\s\-_]/g, '').replace(/\s+/g, '_')
-                    
+
                     if (format === 'pdf') {
                         // A4 Landscape: 297 x 210 mm
                         const doc = new jsPDF({
@@ -270,7 +306,7 @@ export function CertificateGenerator() {
                             unit: 'mm',
                             format: 'a4'
                         })
-                        
+
                         doc.addImage(dataUrl, 'PNG', 0, 0, 297, 210)
                         const pdfBlob = doc.output('blob')
                         zip.file(`sertifikat_${i + 1}_${safeName}.pdf`, pdfBlob)
@@ -278,7 +314,7 @@ export function CertificateGenerator() {
                         const blob = dataUrlToBlob(dataUrl)
                         zip.file(`sertifikat_${i + 1}_${safeName}.png`, blob)
                     }
-                    
+
                     generationResults.push({ name, status: 'success' })
                 } catch (err: any) {
                     generationResults.push({ name, status: 'error', error: err.message })
@@ -339,13 +375,12 @@ export function CertificateGenerator() {
                     <CardContent className="space-y-4">
                         {/* Drop Zone */}
                         <div
-                            className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 cursor-pointer ${
-                                isDragging
-                                    ? 'border-primary bg-primary/5 scale-[1.01]'
-                                    : csvFile
+                            className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 cursor-pointer ${isDragging
+                                ? 'border-primary bg-primary/5 scale-[1.01]'
+                                : csvFile
                                     ? 'border-green-500/60 bg-green-500/5'
                                     : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30'
-                            }`}
+                                }`}
                             onClick={() => fileInputRef.current?.click()}
                             onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
                             onDragLeave={() => setIsDragging(false)}
@@ -386,7 +421,7 @@ export function CertificateGenerator() {
                             <div>
                                 <p className="text-xs font-medium text-muted-foreground mb-1">Contoh format CSV:</p>
                                 <pre className="text-xs font-mono text-muted-foreground bg-background/50 p-2 rounded border">
-{`name
+                                    {`name
 Ahmad Fauzan
 Siti Aisyah`}
                                 </pre>
@@ -506,17 +541,32 @@ Siti Aisyah`}
 
                         {/* Actions */}
                         <div className="flex flex-col gap-3">
-                            <div className="flex items-center gap-2 mb-1">
-                                <span className="text-sm font-medium">Format Output:</span>
-                                <select 
-                                    value={format} 
-                                    onChange={(e) => setFormat(e.target.value as 'png' | 'pdf')}
-                                    className="h-8 px-2 rounded-md border bg-background text-sm"
-                                    disabled={isGenerating}
-                                >
-                                    <option value="pdf">PDF (Direkomendasikan)</option>
-                                    <option value="png">PNG (Gambar)</option>
-                                </select>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-1">
+                                <div className="flex flex-col gap-1.5">
+                                    <span className="text-sm font-medium">Resolusi:</span>
+                                    <select 
+                                        value={resolution} 
+                                        onChange={(e) => setResolution(e.target.value as 'low' | 'medium' | 'high')}
+                                        className="h-9 px-2 rounded-md border bg-background text-sm w-full"
+                                        disabled={isGenerating}
+                                    >
+                                        <option value="high">Tinggi (300 PPI) - Paling Tajam</option>
+                                        <option value="medium">Sedang (150 PPI) - Seimbang</option>
+                                        <option value="low">Rendah (Web) - Tercepat, Hemat Kuota</option>
+                                    </select>
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <span className="text-sm font-medium">Format Output:</span>
+                                    <select 
+                                        value={format} 
+                                        onChange={(e) => setFormat(e.target.value as 'png' | 'pdf')}
+                                        className="h-9 px-2 rounded-md border bg-background text-sm w-full"
+                                        disabled={isGenerating}
+                                    >
+                                        <option value="pdf">PDF (Direkomendasikan)</option>
+                                        <option value="png">PNG (Gambar)</option>
+                                    </select>
+                                </div>
                             </div>
                             <div className="flex gap-2">
                                 <Button
@@ -524,37 +574,37 @@ Siti Aisyah`}
                                     onClick={handleGenerate}
                                     disabled={names.length === 0 || isGenerating}
                                 >
-                                {isGenerating ? (
-                                    <span className="flex items-center gap-2">
-                                        <span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                                        Generating {progress}%...
-                                    </span>
-                                ) : (
-                                    <span className="flex items-center gap-2">
-                                        <Download className="h-4 w-4" />
-                                        Generate & Download ZIP
-                                    </span>
-                                )}
-                            </Button>
-
-                            {csvFile && (
-                                <Button
-                                    variant="outline"
-                                    size="icon"
-                                    onClick={() => {
-                                        setCsvFile(null)
-                                        setNames([])
-                                        setResults([])
-                                        setDownloadUrl(null)
-                                        setCsvError(null)
-                                        setPreviewDataUrl(null)
-                                        if (fileInputRef.current) fileInputRef.current.value = ''
-                                    }}
-                                >
-                                    <X className="h-4 w-4" />
+                                    {isGenerating ? (
+                                        <span className="flex items-center gap-2">
+                                            <span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                                            Generating {progress}%...
+                                        </span>
+                                    ) : (
+                                        <span className="flex items-center gap-2">
+                                            <Download className="h-4 w-4" />
+                                            Generate & Download ZIP
+                                        </span>
+                                    )}
                                 </Button>
-                            )}
-                        </div>
+
+                                {csvFile && (
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={() => {
+                                            setCsvFile(null)
+                                            setNames([])
+                                            setResults([])
+                                            setDownloadUrl(null)
+                                            setCsvError(null)
+                                            setPreviewDataUrl(null)
+                                            if (fileInputRef.current) fileInputRef.current.value = ''
+                                        }}
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                )}
+                            </div>
                         </div>
 
                         {/* Download link */}
@@ -588,9 +638,8 @@ Siti Aisyah`}
                                 {results.map((r, i) => (
                                     <div
                                         key={i}
-                                        className={`px-4 py-2.5 flex items-center gap-3 ${
-                                            r.status === 'error' ? 'bg-destructive/5' : 'hover:bg-muted/30'
-                                        }`}
+                                        className={`px-4 py-2.5 flex items-center gap-3 ${r.status === 'error' ? 'bg-destructive/5' : 'hover:bg-muted/30'
+                                            }`}
                                     >
                                         {r.status === 'success' ? (
                                             <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
