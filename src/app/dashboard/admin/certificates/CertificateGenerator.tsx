@@ -147,7 +147,7 @@ export function CertificateGenerator() {
     const [previewName, setPreviewName] = useState('')
     const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null)
     const [isPreviewing, setIsPreviewing] = useState(false)
-    const [format, setFormat] = useState<'pdf' | 'png'>('pdf')
+    const [format, setFormat] = useState<'pdf' | 'pdf-combined' | 'png'>('pdf-combined')
     const [resolution, setResolution] = useState<'low' | 'medium' | 'high'>('medium')
 
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -288,6 +288,15 @@ export function CertificateGenerator() {
             const zip = new JSZip()
             const generationResults: GenerationResult[] = []
 
+            let combinedPdf: jsPDF | null = null
+            if (format === 'pdf-combined') {
+                combinedPdf = new jsPDF({
+                    orientation: 'landscape',
+                    unit: 'mm',
+                    format: 'a4'
+                })
+            }
+
             for (let i = 0; i < names.length; i++) {
                 const row = names[i]
                 const name = row.name
@@ -299,7 +308,10 @@ export function CertificateGenerator() {
                     const dataUrl = await renderCertificate(svg, name, canvas, resolution)
                     const safeName = name.replace(/[^a-zA-Z0-9\s\-_]/g, '').replace(/\s+/g, '_')
 
-                    if (format === 'pdf') {
+                    if (format === 'pdf-combined') {
+                        if (i > 0) combinedPdf!.addPage()
+                        combinedPdf!.addImage(dataUrl, 'PNG', 0, 0, 297, 210)
+                    } else if (format === 'pdf') {
                         // A4 Landscape: 297 x 210 mm
                         const doc = new jsPDF({
                             orientation: 'landscape',
@@ -327,10 +339,17 @@ export function CertificateGenerator() {
             setProgress(100)
             setCurrentName('')
 
-            // Build ZIP
-            const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } })
-            const url = URL.createObjectURL(zipBlob)
-            setDownloadUrl(url)
+            if (format === 'pdf-combined' && combinedPdf) {
+                const combinedBlob = combinedPdf.output('blob')
+                const url = URL.createObjectURL(combinedBlob)
+                setDownloadUrl(url)
+            } else {
+                // Build ZIP
+                const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } })
+                const url = URL.createObjectURL(zipBlob)
+                setDownloadUrl(url)
+            }
+            
             setResults(generationResults)
         } catch (err: any) {
             setCsvError(`Terjadi kesalahan: ${err.message}`)
@@ -559,12 +578,13 @@ Siti Aisyah`}
                                     <span className="text-sm font-medium">Format Output:</span>
                                     <select 
                                         value={format} 
-                                        onChange={(e) => setFormat(e.target.value as 'png' | 'pdf')}
+                                        onChange={(e) => setFormat(e.target.value as 'png' | 'pdf' | 'pdf-combined')}
                                         className="h-9 px-2 rounded-md border bg-background text-sm w-full"
                                         disabled={isGenerating}
                                     >
-                                        <option value="pdf">PDF (Direkomendasikan)</option>
-                                        <option value="png">PNG (Gambar)</option>
+                                        <option value="pdf-combined">PDF Gabungan (Direkomendasikan Print)</option>
+                                        <option value="pdf">PDF Terpisah (Per Nama)</option>
+                                        <option value="png">PNG Terpisah (Gambar)</option>
                                     </select>
                                 </div>
                             </div>
@@ -582,7 +602,7 @@ Siti Aisyah`}
                                     ) : (
                                         <span className="flex items-center gap-2">
                                             <Download className="h-4 w-4" />
-                                            Generate & Download ZIP
+                                            Generate File
                                         </span>
                                     )}
                                 </Button>
@@ -611,11 +631,15 @@ Siti Aisyah`}
                         {downloadUrl && (
                             <a
                                 href={downloadUrl}
-                                download={`sertifikat_${new Date().toISOString().slice(0, 10)}.zip`}
+                                download={format === 'pdf-combined' 
+                                    ? `Sertifikat_Gabungan_${new Date().toISOString().slice(0, 10)}.pdf` 
+                                    : `Sertifikat_Archive_${new Date().toISOString().slice(0, 10)}.zip`}
                                 className="flex items-center justify-center gap-2 w-full rounded-lg border-2 border-green-500/50 bg-green-500/10 text-green-700 hover:bg-green-500/20 transition-colors px-4 py-3 font-medium text-sm"
                             >
                                 <Download className="h-4 w-4" />
-                                Unduh ZIP ({successCount} sertifikat)
+                                {format === 'pdf-combined' 
+                                    ? `Unduh Dokumen PDF (${successCount} Halaman)` 
+                                    : `Unduh File ZIP (${successCount} Sertifikat)`}
                             </a>
                         )}
                     </CardContent>
