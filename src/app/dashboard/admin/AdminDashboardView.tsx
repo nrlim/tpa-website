@@ -8,7 +8,7 @@ import { EditStudentModal } from './EditStudentModal'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Plus, Users, CreditCard, Settings, UserPlus, BookOpen } from 'lucide-react'
+import { Plus, Users, CreditCard, Settings, UserPlus, BookOpen, Award } from 'lucide-react'
 import Link from 'next/link'
 import { deleteStudent } from './actions'
 import { StudentType } from '@prisma/client'
@@ -96,7 +96,7 @@ export function AdminDashboardView({
             />
 
             {/* Quick Actions Grid */}
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
                 <Link href="/register" className="group">
                     <Card className="h-full hover:border-primary/50 hover:bg-muted/50 transition-colors cursor-pointer">
                         <CardHeader>
@@ -142,6 +142,18 @@ export function AdminDashboardView({
                                 Kelola Kelas
                             </CardTitle>
                             <CardDescription>Atur rombel & jadwal</CardDescription>
+                        </CardHeader>
+                    </Card>
+                </Link>
+
+                <Link href="/dashboard/admin/certificates" className="group">
+                    <Card className="h-full hover:border-primary/50 hover:bg-muted/50 transition-colors cursor-pointer">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-base">
+                                <Award className="h-4 w-4 text-primary group-hover:scale-110 transition-transform" />
+                                Sertifikat
+                            </CardTitle>
+                            <CardDescription>Generate sertifikat massal</CardDescription>
                         </CardHeader>
                     </Card>
                 </Link>

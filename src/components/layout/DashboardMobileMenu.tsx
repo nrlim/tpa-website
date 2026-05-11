@@ -23,6 +23,7 @@ export function DashboardMobileMenu({ role }: DashboardMobileMenuProps) {
                     { href: '/dashboard/admin/classes', label: 'Data Kelas' },
                     { href: '/dashboard/admin/payments', label: 'Data Pembayaran' },
                     { href: '/dashboard/admin/teachers', label: 'Data Pengajar' },
+                    { href: '/dashboard/admin/certificates', label: 'Generate Sertifikat' },
                     { href: '/register', label: 'Tambah Santri Baru' },
                 ]
             case 'teacher':
