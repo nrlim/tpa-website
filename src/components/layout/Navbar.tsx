@@ -7,33 +7,41 @@ import { MobileMenu } from "./MobileMenu"
 
 export async function Navbar() {
     // Check if user is logged in
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    let user = null;
+    let homeLink = "/";
 
-    let homeLink = "/"
+    try {
+        const supabase = await createClient();
+        const { data } = await supabase.auth.getUser();
+        user = data.user;
 
-    // If user is logged in, get their role and set home link to dashboard
-    if (user) {
-        const dbUser = await prisma.user.findUnique({
-            where: { id: user.id },
-            include: { role: true }
-        })
+        // If user is logged in, get their role and set home link to dashboard
+        if (user) {
+            const dbUser = await prisma.user.findUnique({
+                where: { id: user.id },
+                include: { role: true }
+            });
 
-        if (dbUser?.role) {
-            switch (dbUser.role.name) {
-                case 'admin':
-                    homeLink = '/dashboard/admin'
-                    break
-                case 'teacher':
-                    homeLink = '/dashboard/teacher'
-                    break
-                case 'parent':
-                    homeLink = '/dashboard/parent'
-                    break
-                default:
-                    homeLink = '/'
+            if (dbUser?.role) {
+                switch (dbUser.role.name) {
+                    case 'admin':
+                        homeLink = '/dashboard/admin';
+                        break;
+                    case 'teacher':
+                        homeLink = '/dashboard/teacher';
+                        break;
+                    case 'parent':
+                        homeLink = '/dashboard/parent';
+                        break;
+                    default:
+                        homeLink = '/';
+                }
             }
         }
+    } catch (error) {
+        // Silently ignore connection errors (e.g. Supabase is paused)
+        // This allows the landing page to continue rendering.
+        // console.error("Failed to fetch user session:", error);
     }
 
     return (
