@@ -7,6 +7,8 @@ import { signOut } from '@/app/auth/actions'
 import prisma from '@/lib/prisma'
 import { DashboardMobileMenu } from '@/components/layout/DashboardMobileMenu'
 
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
