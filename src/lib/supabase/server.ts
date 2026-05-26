@@ -24,6 +24,30 @@ export async function createClient() {
                     }
                 },
             },
+            global: {
+                fetch: async (url, options) => {
+                    try {
+                        // Use AbortSignal to timeout quickly if hanging (3 seconds)
+                        const controller = new AbortController();
+                        const id = setTimeout(() => controller.abort(), 3000);
+                        
+                        const response = await fetch(url, {
+                            ...options,
+                            signal: controller.signal
+                        });
+                        clearTimeout(id);
+                        return response;
+                    } catch (err) {
+                        // Intercept network errors (like ENOTFOUND when Supabase is paused)
+                        // and return a 400 Bad Request to prevent Supabase JS from infinitely retrying 
+                        // and causing a 25s Vercel Function timeout.
+                        return new Response(JSON.stringify({ error: 'Network fetch failed or timed out' }), {
+                            status: 400,
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                    }
+                }
+            }
         }
     )
 }
